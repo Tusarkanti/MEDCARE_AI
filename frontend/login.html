@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Login - MedCare AI">
+    <title>Login - MedCare AI</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0a0a0c 0%, #1a1a1e 50%, #0a0a0c 100%);
+        }
+        
+        .auth-container {
+            width: 100%;
+            max-width: 440px;
+            padding: 20px;
+        }
+        
+        .auth-card {
+            background: linear-gradient(145deg, rgba(20, 20, 22, 0.95) 0%, rgba(25, 25, 28, 0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .auth-logo {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+        
+        .auth-header h1 {
+            color: #ffffff;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+        
+        .auth-header p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.95rem;
+            margin: 0;
+        }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .form-group label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: rgba(229, 9, 20, 0.5);
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.15);
+        }
+        
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .auth-btn {
+            background: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+            border: none;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+        
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(229, 9, 20, 0.4);
+        }
+        
+        .auth-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .auth-message {
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            display: none;
+            text-align: center;
+        }
+        
+        .auth-message.error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        
+        .auth-message.success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+        }
+        
+        .auth-footer {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        
+        .auth-footer p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        
+        .auth-footer a {
+            color: #e50914;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .resend-section {
+            display: none;
+            text-align: center;
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 12px;
+        }
+        
+        .resend-section p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            margin: 0 0 12px 0;
+        }
+        
+        .resend-btn {
+            background: transparent;
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            color: #f59e0b;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .resend-btn:hover {
+            background: rgba(245, 158, 11, 0.15);
+        }
+        
+        /* Loader Styles */
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .loader-content {
+            text-align: center;
+        }
+        
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(229, 9, 20, 0.2);
+            border-top-color: #e50914;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loader-message {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1rem;
+        }
+        
+        .forgot-password {
+            text-align: right;
+            margin-top: -8px;
+        }
+        
+        .forgot-password a {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .forgot-password a:hover {
+            color: #e50914;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">🏥</div>
+                <h1>Welcome Back</h1>
+                <p>Sign in to your MedCare AI account</p>
+            </div>
+            
+            <div id="auth-message" class="auth-message"></div>
+            
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="you@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required>
+                </div>
+                
+                <div class="forgot-password">
+                    <a href="#">Forgot password?</a>
+                </div>
+                
+                <button type="submit" class="auth-btn">Sign In</button>
+            </form>
+            
+            <div id="resend-section" class="resend-section">
+                <p>Didn't receive verification email?</p>
+                <button id="resend-btn" class="resend-btn">Resend Verification Email</button>
+            </div>
+            
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="signup.html">Sign up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/auth.js?v=3"></script>
+    <script>
+        let pendingEmail = null;
+        
+        // Redirect if already logged in
+        if (redirectIfLoggedIn()) {
+            // Will redirect to dashboard
+        }
+        
+        // Handle login form
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAuthMessage();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!validateEmail(email)) {
+                showAuthMessage('Please enter a valid email address.', true);
+                return;
+            }
+            
+            if (!validatePassword(password)) {
+                showAuthMessage('Password must be at least 6 characters.', true);
+                return;
+            }
+            
+            const result = await login(email, password);
+            
+            if (result.success) {
+                window.location.href = 'index.html';
+            } else if (result.needsVerification) {
+                pendingEmail = result.email;
+                showAuthMessage(result.message, true);
+                document.getElementById('resend-section').style.display = 'block';
+            } else {
+                showAuthMessage(result.message, true);
+            }
+        });
+        
+        // Handle resend verification
+        document.getElementById('resend-btn').addEventListener('click', async () => {
+            if (!pendingEmail) {
+                pendingEmail = document.getElementById('email').value.trim();
+            }
+            
+            if (!pendingEmail) {
+                showAuthMessage('Please enter your email address first.', true);
+                return;
+            }
+            
+            const result = await resendVerification(pendingEmail);
+            showAuthMessage(result.message, !result.success);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MedCare AI - Real-time Healthcare Dashboard with AI-Powered Patient Intake">
+    <title>Dashboard - MedCare AI</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        .realtime-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #10b981;
+        }
+        
+        .realtime-badge .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+        
+        .patient-card {
+            background: linear-gradient(145deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.02) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        
+        .patient-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+        }
+        
+        .patient-info-item {
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .patient-info-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 4px;
+        }
+        
+        .patient-info-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .vitals-realtime-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        
+        .vital-realtime-card {
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .vital-realtime-card.updated {
+            border-color: rgba(16, 185, 129, 0.5);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+        }
+        
+        .vital-realtime-card.vital-alert {
+            border-color: rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+            animation: alertPulse 2s infinite;
+        }
+        
+        @keyframes alertPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
+            50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); }
+        }
+        
+        .vital-realtime-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        
+        .vital-realtime-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        
+        .vital-realtime-label {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .vital-realtime-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        
+        .status-normal { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .status-high { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .status-low { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        
+        /* Vitals Input Form */
+        .vitals-input-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        
+        .vitals-input-section h4 {
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 16px;
+            font-size: 0.95rem;
+        }
+        
+        .vitals-input-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .vital-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .vital-input-group label {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .vital-input-group input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        .vital-input-group input:focus {
+            outline: none;
+            border-color: rgba(229, 9, 20, 0.5);
+            box-shadow: 0 0 10px rgba(229, 9, 20, 0.2);
+        }
+        
+        .vital-input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .submit-vitals-btn {
+            background: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .submit-vitals-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(229, 9, 20, 0.4);
+        }
+        
+        /* Vital Alerts */
+        .vital-alert-banner {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-top: 12px;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .vital-alert-banner.danger {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        
+        .vital-alert-banner.warning {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Vitals Chart Section */
+        .vitals-chart-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+        
+        .vitals-chart-header h4 {
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 16px;
+            font-size: 0.95rem;
+        }
+        
+        .vitals-mini-charts {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        
+        .mini-chart {
+            text-align: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        .mini-chart-label {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 8px;
+        }
+        
+        .mini-chart-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        
+        .mini-chart-value span {
+            font-size: 0.75rem;
+            font-weight: 400;
+            opacity: 0.7;
+        }
+        
+        .mini-chart-bars {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+            height: 80px;
+        }
+        
+        .chart-bar {
+            width: 20px;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .chart-bar:hover {
+            opacity: 0.8;
+            transform: scaleY(1.05);
+        }
+        
+        .chart-bar.empty {
+            background: rgba(255, 255, 255, 0.1);
+            height: 20px;
+        }
+        
+        .mini-chart-no-data {
+            color: rgba(255, 255, 255, 0.3);
+            padding: 30px 0;
+        }
+        
+        .symptoms-display {
+            padding: 16px;
+            background: rgba(229, 9, 20, 0.08);
+            border: 1px solid rgba(229, 9, 20, 0.2);
+            border-radius: 12px;
+            margin-top: 16px;
+        }
+        
+        .symptoms-text {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+        }
+        
+        .symptoms-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .symptoms-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .no-data-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .no-data-message .icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+        
+        .no-data-message h4 {
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .insurance-status-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+        
+        .insurance-icon {
+            font-size: 2.5rem;
+        }
+        
+        .insurance-details {
+            flex: 1;
+        }
+        
+        .insurance-provider {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .insurance-id {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .insurance-status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .insurance-status-badge.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .insurance-status-badge.expired {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        .insurance-status-badge.pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+        
+        .last-updated {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: right;
+            margin-top: 12px;
+        }
+        
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideOutDown {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(20px); }
+        }
+        
+        @media (max-width: 768px) {
+            .vitals-realtime-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .vitals-input-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .vitals-mini-charts {
+                grid-template-columns: 1fr;
+            }
+            
+            .patient-info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
+    <div class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+
+    <!-- Navigation Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>🏥 MedCare AI</h2>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="index.html" class="active"><span>📊</span> Dashboard</a></li>
+            <li><a href="ai-intake.html"><span>🧠</span> AI Intake</a></li>
+            <li><a href="chatbot.html"><span>💬</span> AI Chatbot</a></li>
+            <li><a href="insurance.html"><span>🛡️</span> Insurance</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <span class="user-avatar">👤</span>
+                <span class="user-name">User</span>
+            </div>
+            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+        </div>
+    </nav>
+    
+    <style>
+        .sidebar-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+        .user-avatar {
+            font-size: 1.2rem;
+        }
+        .logout-btn {
+            width: 100%;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .loader-content { text-align: center; }
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(229, 9, 20, 0.2);
+            border-top-color: #e50914;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-message { color: rgba(255, 255, 255, 0.8); font-size: 1rem; }
+    </style>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <header class="header">
+            <div class="header-content">
+                <div>
+                    <h1>📊 Real-Time Dashboard</h1>
+                    <p>Live patient data with vitals tracking</p>
+                </div>
+                <div class="header-actions">
+                    <span class="realtime-badge">
+                        <span class="pulse-dot"></span>
+                        Live Updates
+                    </span>
+                    <button class="btn-primary" onclick="window.location.href='ai-intake.html'">Start AI Intake</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Patient Information Card -->
+            <div class="card patient-card">
+                <div class="card-header">
+                    <h3>👤 Patient Information</h3>
+                    <p>Data collected from AI intake</p>
+                </div>
+                <div class="card-content">
+                    <div id="patient-info-content">
+                        <div class="no-data-message">
+                            <div class="icon">🧠</div>
+                            <h4>No Intake Data Yet</h4>
+                            <p>Complete an AI intake to see your information here</p>
+                            <button class="btn-primary" style="margin-top: 16px;" onclick="window.location.href='ai-intake.html'">Start AI Intake</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vital Signs Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>❤️ Vital Signs</h3>
+                    <p>Track and monitor your vitals</p>
+                </div>
+                <div class="card-content">
+                    <div id="vitals-content">
+                        <div class="vitals-realtime-grid">
+                            <div class="vital-realtime-card" id="vital-heartRate">
+                                <div class="vital-realtime-icon">💓</div>
+                                <div class="vital-realtime-value">--</div>
+                                <div class="vital-realtime-label">Heart Rate</div>
+                                <div class="vital-realtime-status status-normal">--</div>
+                            </div>
+                            <div class="vital-realtime-card" id="vital-bloodPressure">
+                                <div class="vital-realtime-icon">🩸</div>
+                                <div class="vital-realtime-value">--/--</div>
+                                <div class="vital-realtime-label">Blood Pressure</div>
+                                <div class="vital-realtime-status status-normal">--</div>
+                            </div>
+                            <div class="vital-realtime-card" id="vital-temperature">
+                                <div class="vital-realtime-icon">🌡️</div>
+                                <div class="vital-realtime-value">--</div>
+                                <div class="vital-realtime-label">Temperature</div>
+                                <div class="vital-realtime-status status-normal">--</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Vital Alerts Container -->
+                        <div id="vital-alerts-container"></div>
+                        
+                        <!-- Vitals Input Section -->
+                        <div class="vitals-input-section">
+                            <h4>📝 Record New Vitals</h4>
+                            <div class="vitals-input-grid">
+                                <div class="vital-input-group">
+                                    <label>Heart Rate (bpm)</label>
+                                    <input type="number" id="input-heartRate" placeholder="e.g., 72" min="30" max="200">
+                                </div>
+                                <div class="vital-input-group">
+                                    <label>Blood Pressure</label>
+                                    <input type="text" id="input-bloodPressure" placeholder="e.g., 120/80">
+                                </div>
+                                <div class="vital-input-group">
+                                    <label>Temperature (°F)</label>
+                                    <input type="number" id="input-temperature" placeholder="e.g., 98.6" step="0.1" min="90" max="110">
+                                </div>
+                            </div>
+                            <button class="submit-vitals-btn" onclick="submitVitals()">💾 Save Vitals</button>
+                        </div>
+                        
+                        <!-- Vitals Chart Container -->
+                        <div id="vitals-chart-container" class="vitals-chart-container"></div>
+                    </div>
+                    <div id="last-vitals-update" class="last-updated">Last updated: --</div>
+                </div>
+            </div>
+
+            <!-- Symptoms Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>🩺 Current Symptoms</h3>
+                    <p>Reported during AI intake</p>
+                </div>
+                <div class="card-content">
+                    <div id="symptoms-content">
+                        <div class="no-data-message">
+                            <div class="icon">💬</div>
+                            <h4>No Symptoms Reported</h4>
+                            <p>Symptoms will appear here after AI intake</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insurance Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>🛡️ Insurance Status</h3>
+                    <p>Verified via OCR</p>
+                </div>
+                <div class="card-content">
+                    <div id="insurance-content">
+                        <div class="insurance-status-card">
+                            <div class="insurance-icon">🛡️</div>
+                            <div class="insurance-details">
+                                <div class="insurance-provider" id="insurance-provider">Not Verified</div>
+                                <div class="insurance-id" id="insurance-member-id">Upload insurance card to verify</div>
+                            </div>
+                            <span id="insurance-status-badge" class="insurance-status-badge pending">Pending</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doctor Advice Card -->
+            <div class="card" style="grid-column: span 2;">
+                <div class="card-header">
+                    <h3>👨‍⚕️ Doctor's Pre-Consultation Advice</h3>
+                    <p>AI-generated recommendations based on your intake</p>
+                </div>
+                <div class="card-content">
+                    <div id="doctor-advice-content">
+                        <div class="no-data-message" style="padding: 30px;">
+                            <div class="icon">👨‍⚕️</div>
+                            <h4>No Advice Generated Yet</h4>
+                            <p>Complete an AI intake to receive doctor's pre-consultation advice</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Score Card -->
+            <div class="card health-score-card">
+                <div class="card-header">
+                    <h3>📈 Health Assessment</h3>
+                    <p>AI-calculated wellness score</p>
+                </div>
+                <div class="card-content">
+                    <div class="score-display">
+                        <div class="score-circle">
+                            <div class="score-value" id="health-score-value">--</div>
+                            <div class="score-label">/ 100</div>
+                        </div>
+                        <div class="score-info">
+                            <div class="score-trend" id="health-score-trend">Pending Assessment</div>
+                            <p id="health-score-message">Complete an AI intake to receive your personalized health score.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card actions-card">
+                <div class="card-header">
+                    <h3>⚡ Quick Actions</h3>
+                    <p>Navigate to main features</p>
+                </div>
+                <div class="card-content">
+                    <div class="actions-grid">
+                        <a href="ai-intake.html" class="action-btn">
+                            <div class="action-icon">🧠</div>
+                            <div class="action-label">AI Intake</div>
+                        </a>
+                        <a href="insurance.html" class="action-btn">
+                            <div class="action-icon">🛡️</div>
+                            <div class="action-label">Insurance</div>
+                        </a>
+                        <a href="chatbot.html" class="action-btn">
+                            <div class="action-icon">💬</div>
+                            <div class="action-label">AI Chat</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="scripts/config.js"></script>
+    <script src="scripts/auth.js?v=3"></script>
+    <script src="scripts/realtime-dashboard.js"></script>
+    <script>
+        // Require authentication
+        if (!requireAuth()) {
+            // Will redirect to login
+        } else {
+            // Update user display
+            updateUserDisplay();
+        }
+    </script>
+    <script>
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.mobile-overlay');
+    sidebar.classList.toggle('active');
+    overlay.classList.toggle('active');
+    document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+}
+
+// Close menu when clicking a nav link on mobile
+document.querySelectorAll('.sidebar-menu a').forEach(link => {
+    link.addEventListener('click', () => {
+        if (window.innerWidth <= 767) {
+            toggleMobileMenu();
+        }
+    });
+});
+
+// Close menu on resize to desktop
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 767) {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.mobile-overlay');
+        if (sidebar) sidebar.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+});
+</script>
+</body>
+</html>

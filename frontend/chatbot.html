@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI Health Chatbot - MedCare AI">
+    <title>AI Chatbot - MedCare AI</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        .chatbot-layout {
+            display: flex;
+            gap: 0;
+            height: calc(100vh - 100px);
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Chat Sidebar - History */
+        .chat-sidebar {
+            width: 280px;
+            background: linear-gradient(145deg, rgba(14, 14, 16, 0.98) 0%, rgba(18, 18, 22, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px 0 0 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-sidebar-header h3 {
+            color: #ffffff;
+            font-size: 1rem;
+            margin: 0;
+        }
+        
+        .new-chat-btn {
+            background: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+            border: none;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .new-chat-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
+        }
+        
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .chat-list-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 14px;
+            margin-bottom: 6px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .chat-list-item:hover {
+            background: rgba(229, 9, 20, 0.1);
+            border-color: rgba(229, 9, 20, 0.2);
+        }
+        
+        .chat-list-item.active {
+            background: rgba(229, 9, 20, 0.15);
+            border-color: rgba(229, 9, 20, 0.3);
+        }
+        
+        .chat-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .chat-item-title {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .chat-item-date {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.75rem;
+            margin-top: 4px;
+        }
+        
+        .delete-chat-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+        
+        .chat-list-item:hover .delete-chat-btn {
+            opacity: 1;
+        }
+        
+        .delete-chat-btn:hover {
+            color: #ef4444;
+        }
+        
+        .no-chats-message {
+            text-align: center;
+            padding: 30px 20px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Main Chat Area */
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(145deg, rgba(14, 14, 16, 0.95) 0%, rgba(18, 18, 22, 0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-left: none;
+            border-radius: 0 16px 16px 0;
+        }
+        
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-header-info h3 {
+            color: #ffffff;
+            font-size: 1.1rem;
+            margin: 0 0 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .chat-header-info p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            margin: 0;
+        }
+        
+        .chat-header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-header-actions button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        
+        .chat-header-actions button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+        
+        /* Chat Window */
+        #chat-window {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            scroll-behavior: smooth;
+        }
+        
+        .chat-message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            animation: messageSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes messageSlideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .chat-message.user-message {
+            flex-direction: row-reverse;
+        }
+        
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(229, 9, 20, 0.2) 0%, rgba(229, 9, 20, 0.1) 100%);
+            border: 1px solid rgba(229, 9, 20, 0.3);
+        }
+        
+        .user-message .message-avatar {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 14px 18px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .user-message .message-content {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.08) 100%);
+            border-color: rgba(59, 130, 246, 0.25);
+        }
+        
+        .message-text {
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+        
+        .message-time {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 8px;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+        
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(229, 9, 20, 0.6);
+            animation: typingBounce 1.4s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+        
+        /* Chat Input Area */
+        .chat-input-area {
+            padding: 20px 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 12px 16px;
+            align-items: flex-end;
+        }
+        
+        #chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            resize: none;
+            font-family: inherit;
+            font-size: 1rem;
+            line-height: 1.5;
+            min-height: 24px;
+            max-height: 150px;
+            outline: none;
+        }
+        
+        #chat-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        #send-button {
+            background: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+            border: none;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        #send-button:hover:not(:disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(229, 9, 20, 0.4);
+        }
+        
+        #send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Quick Suggestions */
+        .chat-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .suggestion-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .suggestion-btn:hover {
+            background: rgba(229, 9, 20, 0.15);
+            border-color: rgba(229, 9, 20, 0.3);
+            color: #ffffff;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 900px) {
+            .chatbot-layout {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .chat-sidebar {
+                width: 100%;
+                max-height: 200px;
+                border-radius: 16px 16px 0 0;
+            }
+            
+            .chat-main {
+                border-left: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 0 0 16px 16px;
+                min-height: 500px;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .chat-header-actions {
+                flex-direction: column;
+                gap: 6px;
+            }
+            
+            .chat-suggestions {
+                flex-direction: column;
+            }
+            
+            .suggestion-btn {
+                text-align: left;
+            }
+        }
+        
+        .sidebar-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+        .user-avatar { font-size: 1.2rem; }
+        .logout-btn {
+            width: 100%;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover { background: rgba(239, 68, 68, 0.25); }
+        .loader-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .loader-content { text-align: center; }
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(229, 9, 20, 0.2);
+            border-top-color: #e50914;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-message { color: rgba(255, 255, 255, 0.8); font-size: 1rem; }
+        
+        /* Code Block Styling */
+        .code-block {
+            background: #1a1a2e;
+            border-radius: 10px;
+            margin: 12px 0;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 14px;
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .code-lang {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+        .code-copy-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+        .code-copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+        .code-block pre {
+            margin: 0;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        .code-block code {
+            font-family: 'Fira Code', 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+        .inline-code {
+            background: rgba(229, 9, 20, 0.15);
+            color: #ff6b6b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+        
+        /* Message Actions */
+        .message-actions {
+            margin-top: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .chat-message:hover .message-actions {
+            opacity: 1;
+        }
+        .copy-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .copy-btn:hover { opacity: 1; }
+        
+        /* Better Typography */
+        .message-text h2, .message-text h3, .message-text h4 {
+            margin: 12px 0 8px 0;
+            color: #fff;
+        }
+        .message-text h2 { font-size: 1.3rem; }
+        .message-text h3 { font-size: 1.15rem; }
+        .message-text h4 { font-size: 1.05rem; }
+        .message-text ul, .message-text ol {
+            margin: 8px 0;
+            padding-left: 24px;
+        }
+        .message-text li { margin: 4px 0; }
+        .message-text strong { color: #fff; }
+        
+        /* Loading button animation */
+        .btn-loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
+    <div class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+
+    <!-- Navigation Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>🏥 MedCare AI</h2>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="index.html"><span>📊</span> Dashboard</a></li>
+            <li><a href="ai-intake.html"><span>🧠</span> AI Intake</a></li>
+            <li><a href="chatbot.html" class="active"><span>💬</span> AI Chatbot</a></li>
+            <li><a href="insurance.html"><span>🛡️</span> Insurance</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <span class="user-avatar">👤</span>
+                <span class="user-name">User</span>
+            </div>
+            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <header class="header">
+            <div class="header-content">
+                <div>
+                    <h1>🤖 AI Health Assistant</h1>
+                    <p>Your personal health companion - available 24/7</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Chatbot Layout -->
+        <div class="chatbot-layout">
+            <!-- Chat History Sidebar -->
+            <div class="chat-sidebar" id="chat-sidebar">
+                <!-- Content rendered by JavaScript -->
+            </div>
+            
+            <!-- Main Chat Area -->
+            <div class="chat-main">
+                <div class="chat-header">
+                    <div class="chat-header-info">
+                        <h3>🤖 AI Assistant</h3>
+                        <p>Chat about anything - coding, writing, learning, or any topic!</p>
+                    </div>
+                    <div class="chat-header-actions">
+                        <button onclick="clearChatHistory()" title="Clear conversation">🗑️ Clear</button>
+                        <button onclick="exportChatHistory()" title="Download conversation">⬇️ Export</button>
+                    </div>
+                </div>
+                
+                <!-- Chat Window -->
+                <div id="chat-window">
+                    <!-- Messages will be added here dynamically -->
+                </div>
+                
+                <!-- Chat Input -->
+                <div class="chat-input-area">
+                    <div class="chat-input-wrapper">
+                        <textarea
+                            id="chat-input"
+                            placeholder="Share what's on your mind..."
+                            rows="1"
+                        ></textarea>
+                        <button id="send-button">Send</button>
+                    </div>
+                    
+                    <!-- Quick Suggestions -->
+                    <div class="chat-suggestions">
+                        <button class="suggestion-btn" onclick="sendSuggestion('Explain how JavaScript closures work')">💻 Explain closures</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('Write a Python function to sort a list')">🐍 Python code</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('What are the best practices for React?')">⚛️ React tips</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('Help me write an email to my boss')">✉️ Write email</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('Explain quantum computing simply')">🔬 Explain topic</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('Give me creative ideas for a birthday party')">🎨 Creative ideas</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="scripts/config.js?v=100"></script>
+    <script src="scripts/auth.js?v=100"></script>
+    <script>
+        if (!requireAuth()) {
+            // Will redirect to login
+        } else {
+            updateUserDisplay();
+        }
+    </script>
+    <script src="scripts/chatbot.js?v=500"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script>
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.mobile-overlay');
+    sidebar.classList.toggle('active');
+    overlay.classList.toggle('active');
+    document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+}
+
+// Close menu when clicking a nav link on mobile
+document.querySelectorAll('.sidebar-menu a').forEach(link => {
+    link.addEventListener('click', () => {
+        if (window.innerWidth <= 767) {
+            toggleMobileMenu();
+        }
+    });
+});
+
+// Close menu on resize to desktop
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 767) {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.mobile-overlay');
+        if (sidebar) sidebar.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+});
+</script>
+</body>
+</html>

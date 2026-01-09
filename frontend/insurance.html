@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Insurance Verification - AI Assistant with OCR processing">
+    <title>Insurance Verification - MedCare AI</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        .insurance-assistant-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .insurance-chat-card {
+            height: auto;
+            min-height: 600px;
+        }
+        
+        .insurance-chat-card .chat-window {
+            height: 450px;
+            min-height: 450px;
+        }
+        
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .chat-input-wrapper textarea {
+            flex: 1;
+        }
+        
+        .upload-btn-chat {
+            background: linear-gradient(135deg, rgba(229, 9, 20, 0.15) 0%, rgba(229, 9, 20, 0.08) 100%);
+            border: 1px solid rgba(229, 9, 20, 0.3);
+            color: #e50914;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .upload-btn-chat:hover {
+            background: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+        }
+        
+        .image-preview-chat {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(229, 9, 20, 0.1);
+            border: 1px solid rgba(229, 9, 20, 0.2);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .image-preview-chat img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .image-preview-chat .preview-info {
+            flex: 1;
+        }
+        
+        .image-preview-chat .preview-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #fff;
+        }
+        
+        .image-preview-chat .preview-size {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+        }
+        
+        .image-preview-chat .remove-preview {
+            background: rgba(239, 68, 68, 0.2);
+            border: none;
+            color: #ef4444;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .image-preview-chat .remove-preview:hover {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .message-image {
+            max-width: 200px;
+            border-radius: 10px;
+            margin-top: 8px;
+        }
+        
+        .ocr-result {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+        
+        .ocr-result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .ocr-result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .ocr-result-label {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.85rem;
+        }
+        
+        .ocr-result-value {
+            color: #10b981;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .feature-box {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .feature-box-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+        
+        .feature-box-text {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        @media (max-width: 768px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .sidebar-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+        .user-avatar { font-size: 1.2rem; }
+        .logout-btn {
+            width: 100%;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover { background: rgba(239, 68, 68, 0.25); }
+        .loader-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .loader-content { text-align: center; }
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(229, 9, 20, 0.2);
+            border-top-color: #e50914;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-message { color: rgba(255, 255, 255, 0.8); font-size: 1rem; }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
+    <div class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+
+    <!-- Navigation Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>🏥 MedCare AI</h2>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="index.html"><span>📊</span> Dashboard</a></li>
+            <li><a href="ai-intake.html"><span>🧠</span> AI Intake</a></li>
+            <li><a href="chatbot.html"><span>💬</span> AI Chatbot</a></li>
+            <li><a href="insurance.html" class="active"><span>🛡️</span> Insurance</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <span class="user-avatar">👤</span>
+                <span class="user-name">User</span>
+            </div>
+            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <header class="header">
+            <div class="header-content">
+                <div>
+                    <h1>🛡️ Insurance Assistant</h1>
+                    <p>AI-powered insurance verification and assistance</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Insurance Assistant -->
+        <div class="insurance-assistant-container">
+            <!-- Features -->
+            <div class="features-grid">
+                <div class="feature-box">
+                    <div class="feature-box-icon">🔢</div>
+                    <div class="feature-box-text">Option 1: Type Card Number</div>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-box-icon">📷</div>
+                    <div class="feature-box-text">Option 2: Upload Card Photo</div>
+                </div>
+                <div class="feature-box">
+                    <div class="feature-box-icon">✅</div>
+                    <div class="feature-box-text">Instant Verification</div>
+                </div>
+            </div>
+
+            <!-- Main Chat Card -->
+            <div class="card insurance-chat-card">
+                <div class="card-header">
+                    <h3>🏥 Insurance Verification</h3>
+                    <p>Type your card number OR upload a photo - your choice</p>
+                </div>
+                <div class="card-content">
+                    <!-- Chat Window -->
+                    <div id="insurance-chat-window" class="chat-window">
+                        <!-- Initial message will be added by JavaScript -->
+                    </div>
+
+                    <!-- Image Preview -->
+                    <div id="image-preview-container" class="image-preview-chat" style="display: none;">
+                        <img id="preview-image" src="" alt="Preview">
+                        <div class="preview-info">
+                            <div id="preview-name" class="preview-name">image.jpg</div>
+                            <div id="preview-size" class="preview-size">0 KB</div>
+                        </div>
+                        <button id="remove-preview" class="remove-preview">✕</button>
+                    </div>
+
+                    <!-- Chat Input Area -->
+                    <div class="chat-input-area">
+                        <div class="chat-input-container" style="flex-direction: column;">
+                            <div class="chat-input-wrapper">
+                                <button id="upload-btn" class="upload-btn-chat" title="Upload Insurance Card">
+                                    📎
+                                </button>
+                                <textarea
+                                    id="insurance-chat-input"
+                                    placeholder="Type insurance card number here..."
+                                    rows="1"
+                                ></textarea>
+                            </div>
+                            <button id="insurance-send-button" class="btn-primary" style="margin-top: 10px; width: 100%; padding: 12px 20px;">Verify Insurance</button>
+                            <input type="file" id="insurance-file-input" accept="image/*,.pdf" style="display: none;">
+                        </div>
+
+                        <div class="chat-suggestions">
+                            <!-- Quick responses will be added dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script src="scripts/config.js"></script>
+    <script src="scripts/auth.js?v=3"></script>
+    <script>
+        if (!requireAuth()) {
+            // Will redirect to login
+        } else {
+            updateUserDisplay();
+        }
+    </script>
+    <script src="scripts/insurance-assistant.js"></script>
+    <script>
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.mobile-overlay');
+    sidebar.classList.toggle('active');
+    overlay.classList.toggle('active');
+    document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+}
+
+// Close menu when clicking a nav link on mobile
+document.querySelectorAll('.sidebar-menu a').forEach(link => {
+    link.addEventListener('click', () => {
+        if (window.innerWidth <= 767) {
+            toggleMobileMenu();
+        }
+    });
+});
+
+// Close menu on resize to desktop
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 767) {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.mobile-overlay');
+        if (sidebar) sidebar.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+});
+</script>
+</body>
+</html>
