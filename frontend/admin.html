@@ -497,15 +497,15 @@
             <li><a href="index.html"><span>📊</span> Dashboard</a></li>
             <li><a href="ai-intake.html"><span>🧠</span> AI Intake</a></li>
             <li><a href="chatbot.html"><span>💬</span> AI Chatbot</a></li>
+            <li><a href="vital-signs-camera.html"><span>📸</span> Vital Signs</a></li>
             <li><a href="insurance.html"><span>🛡️</span> Insurance</a></li>
             <li><a href="admin.html" class="active"><span>👤</span> Admin</a></li>
         </ul>
         <div class="sidebar-footer">
             <div class="user-info">
                 <span class="user-avatar">👤</span>
-                <span class="user-name">User</span>
+                <span class="user-name">Guest</span>
             </div>
-            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
         </div>
     </nav>
 
@@ -559,7 +559,7 @@
                             <span>🔍</span>
                             <input type="text" id="search-input" placeholder="Search patients..." oninput="filterPatients()">
                         </div>
-                        <button class="btn-primary" onclick="syncToFirebase()" id="sync-btn">☁️ Sync to Firebase</button>
+                        <button class="btn-primary" onclick="syncToMongoDB()" id="sync-btn">☁️ Migrate to MongoDB</button>
                     </div>
                 </div>
                 
@@ -603,27 +603,90 @@
     </div>
 
     <script src="scripts/config.js"></script>
-    <script src="scripts/firebase-sync.js"></script>
-    <script src="scripts/auth.js?v=3"></script>
+    <script src="scripts/auth.js?v=6"></script>
     <script>
-        if (!requireAuth()) {
-            // Will redirect to login
-        } else {
-            updateUserDisplay();
-        }
+        // Authentication is currently disabled; auth.js is retained for later use.
     </script>
     <script>
         let allPatients = [];
+        let useMongoDB = true; // Set to true to use MongoDB
 
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(initializeAdmin, 500);
         });
 
-        function initializeAdmin() {
-            loadPatientsFromLocalStorage();
+        async function initializeAdmin() {
+            console.log('🔄 Initializing Admin Dashboard...');
+            
+            // Check if MongoDB is available
+            await checkMongoDBConnection();
+            
+            // Load patients
+            if (useMongoDB) {
+                await loadPatientsFromMongoDB();
+            } else {
+                loadPatientsFromLocalStorage();
+            }
+        }
+
+        async function checkMongoDBConnection() {
+            try {
+                const healthUrl = getAdminApiUrl() + '/api/admin/health';
+                const response = await fetch(healthUrl, { timeout: 3000 });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ MongoDB connected:', data.mongodb_connected);
+                    useMongoDB = data.mongodb_connected;
+                    
+                    if (!useMongoDB) {
+                        console.warn('⚠️ MongoDB not connected, falling back to localStorage');
+                        showNotification('MongoDB not connected. Using local data.', 'warning');
+                    }
+                } else {
+                    throw new Error('Health check failed');
+                }
+            } catch (error) {
+                console.warn('⚠️ Cannot connect to MongoDB API, using localStorage:', error.message);
+                useMongoDB = false;
+                showNotification('Using local storage. Configure MongoDB for cloud storage.', 'warning');
+            }
+        }
+
+        async function loadPatientsFromMongoDB() {
+            try {
+                const patientsUrl = getAdminPatientsUrl();
+                console.log('Fetching from:', patientsUrl);
+                
+                const response = await fetch(patientsUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch patients');
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    allPatients = result.patients || [];
+                    console.log(`✅ Loaded ${allPatients.length} patients from MongoDB`);
+                    updateStats(allPatients);
+                    renderPatientsTable(allPatients);
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+            } catch (error) {
+                console.error('❌ Error loading from MongoDB:', error);
+                showNotification('Failed to load from MongoDB: ' + error.message, 'error');
+                
+                // Fallback to localStorage
+                console.log('Falling back to localStorage...');
+                useMongoDB = false;
+                loadPatientsFromLocalStorage();
+            }
         }
 
         function loadPatientsFromLocalStorage() {
+            console.log('📱 Loading from localStorage...');
             const patients = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
@@ -959,28 +1022,80 @@
         }
 
         function refreshData() {
-            loadPatientsFromLocalStorage();
+            if (useMongoDB) {
+                loadPatientsFromMongoDB();
+            } else {
+                loadPatientsFromLocalStorage();
+            }
         }
 
-        async function syncToFirebase() {
+        async function syncToMongoDB() {
             const btn = document.getElementById('sync-btn');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '⏳ Syncing...';
+            btn.innerHTML = '⏳ Migrating...';
             btn.disabled = true;
 
             try {
-                const result = await syncAllPatientsToFirebase();
+                // First, get all patients from localStorage
+                const patientsData = [];
+                
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('medcare_patient_')) {
+                        try {
+                            const patientData = JSON.parse(localStorage.getItem(key));
+                            const patientId = key.replace('medcare_patient_', '');
+                            
+                            const vitalsHistoryStr = localStorage.getItem(`medcare_vitals_history_${patientId}`);
+                            const vitalsHistory = vitalsHistoryStr ? JSON.parse(vitalsHistoryStr) : [];
+                            
+                            patientsData.push({
+                                ...patientData,
+                                id: patientId,
+                                vitalsHistory
+                            });
+                        } catch (e) {
+                            console.error('Error parsing patient data:', e);
+                        }
+                    }
+                }
+
+                if (patientsData.length === 0) {
+                    btn.innerHTML = '✅ No data to migrate';
+                    alert('No patient data found in localStorage to migrate.');
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }, 2000);
+                    return;
+                }
+
+                // Send to MongoDB migration endpoint
+                const migrateUrl = getAdminApiUrl() + '/api/admin/migrate-from-localstorage';
+                const response = await fetch(migrateUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ patients: patientsData })
+                });
+
+                const result = await response.json();
+
                 if (result.success) {
-                    btn.innerHTML = '✅ Synced!';
-                    alert(`Successfully synced ${result.synced} patients to Firebase!`);
+                    btn.innerHTML = '✅ Migrated!';
+                    alert(`Successfully migrated ${result.migrated} patients to MongoDB!`);
+                    
+                    // Reload data from MongoDB
+                    await loadPatientsFromMongoDB();
                 } else {
                     btn.innerHTML = '❌ Failed';
-                    alert('Sync failed: ' + result.message);
+                    alert('Migration failed: ' + result.message);
                 }
             } catch (error) {
-                console.error('Sync error:', error);
+                console.error('Migration error:', error);
                 btn.innerHTML = '❌ Error';
-                alert('Sync error: ' + error.message);
+                alert('Migration error: ' + error.message);
             }
 
             setTimeout(() => {
@@ -989,19 +1104,11 @@
             }, 2000);
         }
 
-        async function loadFromFirebaseBtn() {
+        async function loadFromMongoDBBtn() {
             try {
-                const patients = await loadPatientsFromFirebase();
-                if (patients.length > 0) {
-                    allPatients = patients;
-                    updateStats(patients);
-                    renderPatientsTable(patients);
-                    alert(`Loaded ${patients.length} patients from Firebase`);
-                } else {
-                    alert('No patients found in Firebase');
-                }
+                await loadPatientsFromMongoDB();
             } catch (error) {
-                alert('Failed to load from Firebase: ' + error.message);
+                alert('Failed to load from MongoDB: ' + error.message);
             }
         }
 
@@ -1023,6 +1130,44 @@
                 hour: '2-digit',
                 minute: '2-digit'
             });
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 16px 24px;
+                    background: ${type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#10b981'};
+                    color: white;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    z-index: 10000;
+                    animation: slideIn 0.3s ease;
+                ">
+                    ${message}
+                </div>
+            `;
+            
+            // Add animation keyframes
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            document.body.appendChild(notification);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
         }
 
         document.addEventListener('keydown', (e) => {

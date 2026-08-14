@@ -1,8 +1,6 @@
 /**
  * Insurance Verification Assistant
- * Uses the SAME webhook as patient intake
- * All data flows through: /webhook/patient-intake
- * n8n handles insurance logic via IF condition
+ * Uses backend insurance verification API
  */
 
 document.addEventListener('DOMContentLoaded', initializeInsuranceAssistant);
@@ -16,10 +14,6 @@ const InsuranceState = {
 };
 
 let selectedFile = null;
-
-function getWebhookUrl() {
-  return APP_CONFIG?.webhookUrl || 'https://tusarrr.app.n8n.cloud/webhook/medical-assistant';
-}
 
 async function initializeInsuranceAssistant() {
   setupChatInput();
@@ -137,8 +131,7 @@ function validateCardNumber(input) {
 }
 
 /**
- * Send insurance data to the SAME webhook as patient intake
- * n8n will handle insurance logic via IF condition
+ * Send insurance verification data to backend API
  */
 async function verifyInsurance(cardNumber, imageBase64) {
   addMessage('bot', `🔍 Verifying insurance: <strong>${cardNumber}</strong>...`, true);
@@ -152,12 +145,15 @@ async function verifyInsurance(cardNumber, imageBase64) {
     timestamp: new Date().toISOString()
   };
   
-  console.log('📤 Sending insurance verification to webhook:', payload.action);
+  console.log('📤 Sending insurance verification to backend API');
   
   try {
-    const response = await fetch(getWebhookUrl(), {
+    const response = await fetch(getInsuranceVerifyUrl(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader()
+      },
       body: JSON.stringify(payload)
     });
     
@@ -184,7 +180,7 @@ async function verifyInsurance(cardNumber, imageBase64) {
         });
       }
     } else {
-      console.error('❌ Webhook error:', response.status);
+      console.error('❌ Insurance API error:', response.status);
       handleInsuranceNotFound(cardNumber);
     }
   } catch (error) {

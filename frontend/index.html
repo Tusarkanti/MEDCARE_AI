@@ -448,14 +448,14 @@
             <li><a href="index.html" class="active"><span>📊</span> Dashboard</a></li>
             <li><a href="ai-intake.html"><span>🧠</span> AI Intake</a></li>
             <li><a href="chatbot.html"><span>💬</span> AI Chatbot</a></li>
+            <li><a href="vital-signs-camera.html"><span>📸</span> Vital Signs</a></li>
             <li><a href="insurance.html"><span>🛡️</span> Insurance</a></li>
         </ul>
         <div class="sidebar-footer">
             <div class="user-info">
                 <span class="user-avatar">👤</span>
-                <span class="user-name">User</span>
+                <span class="user-name">Guest</span>
             </div>
-            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
         </div>
     </nav>
     
@@ -704,13 +704,17 @@
                             <div class="action-icon">🧠</div>
                             <div class="action-label">AI Intake</div>
                         </a>
-                        <a href="insurance.html" class="action-btn">
-                            <div class="action-icon">🛡️</div>
-                            <div class="action-label">Insurance</div>
+                        <a href="vital-signs-camera.html" class="action-btn">
+                            <div class="action-icon">📸</div>
+                            <div class="action-label">Vital Signs</div>
                         </a>
                         <a href="chatbot.html" class="action-btn">
                             <div class="action-icon">💬</div>
                             <div class="action-label">AI Chat</div>
+                        </a>
+                        <a href="insurance.html" class="action-btn">
+                            <div class="action-icon">🛡️</div>
+                            <div class="action-label">Insurance</div>
                         </a>
                     </div>
                 </div>
@@ -719,16 +723,10 @@
     </main>
 
     <script src="scripts/config.js"></script>
-    <script src="scripts/auth.js?v=3"></script>
+    <script src="scripts/auth.js?v=6"></script>
     <script src="scripts/realtime-dashboard.js"></script>
     <script>
-        // Require authentication
-        if (!requireAuth()) {
-            // Will redirect to login
-        } else {
-            // Update user display
-            updateUserDisplay();
-        }
+        // Authentication is currently disabled; auth.js is retained for later use.
     </script>
     <script>
 function toggleMobileMenu() {

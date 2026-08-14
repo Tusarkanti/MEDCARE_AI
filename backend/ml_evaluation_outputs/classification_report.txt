@@ -1,0 +1,13 @@
+                  precision    recall  f1-score   support
+
+         Genetic     0.9778    1.0000    0.9888        44
+      Infectious     0.9852    0.9732    0.9792       411
+   Mental Health     1.0000    1.0000    1.0000       148
+Non-Communicable     0.9812    0.9962    0.9886       785
+     Respiratory     0.9934    0.9711    0.9821       622
+    Vector-Borne     0.9954    0.9864    0.9909       664
+      Waterborne     0.9583    0.9857    0.9718       420
+
+        accuracy                         0.9848      3094
+       macro avg     0.9845    0.9875    0.9859      3094
+    weighted avg     0.9850    0.9848    0.9848      3094

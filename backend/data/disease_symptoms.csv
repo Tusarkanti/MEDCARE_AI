@@ -1,0 +1,41 @@
+Disease,Symptom_1,Symptom_2,Symptom_3,Symptom_4,Symptom_5,Symptom_6,Symptom_7,Symptom_8,Symptom_9,Symptom_10,Symptom_11,Symptom_12,Symptom_13,Symptom_14,Symptom_15,Symptom_16,Symptom_17
+Fungal infection,itching,skin_rash,nodal_skin_eruptions,dischromic _patches,1,0,0,0,0,0,0,0,0,0,0,0,0
+Allergy,skin_rash,skin_rash,red_spots_over_body,1,0,0,0,0,0,0,0,0,0,0,0,0
+viral_wart,skin_rash,nodal_skin_eruptions,dischromic _patches,1,0,0,0,0,0,0,0,0,0,0,0,0
+chicken_pox,skin_rash,chills,red_spots_over_body,aching_of_joints,1,0,0,0,0,0,0,0,0,0,0,0
+impetigo,blister,red_sore_around_nose,skin_rash,1,0,0,0,0,0,0,0,0,0,0,0,0
+Fungal infection,itching,skin_rash,nodal_skin_eruptions,dischromic _patches,1,0,0,0,0,0,0,0,0,0,0,0,0
+Allergy,continuous_sneezing,shivering,watery_eyes,red_spots_over_body,1,0,0,0,0,0,0,0,0,0,0,0,0
+viral_wart,skin_rash,nodal_skin_eruptions,dischromic _patches,1,0,0,0,0,0,0,0,0,0,0,0,0
+chicken_pox,skin_rash,chills,red_spots_over_body,aching_of_joints,1,0,0,0,0,0,0,0,0,0,0,0,0
+impetigo,blister,red_sore_around_nose,skin_rash,pus_filled_pimples,1,0,0,0,0,0,0,0,0,0,0,0,0
+Fungal infection,itching,skin_rash,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Allergy,skin_rash,red_spots_over_body,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+viral_wart,nodal_skin_eruptions,dischromic _patches,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+chicken_pox,skin_rash,chills,aching_of_joints,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+impetigo,blister,red_sore_around_nose,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Malaria,chills,high_fever,sweating,headache,red_spots_over_body,1,0,0,0,0,0,0,0,0,0,0,0
+Dengue,chills,joint_pain,skin_rash,high_fever,1,0,0,0,0,0,0,0,0,0,0,0,0
+Chikungunya,joint_pain,chills,swollen_lymph_nodes,headache,1,0,0,0,0,0,0,0,0,0,0,0,0
+Typhoid,high_fever,headache,lethargy,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Yellow Fever,high_fever,vomiting,headache,fatigue,1,0,0,0,0,0,0,0,0,0,0,0,0
+Common Cold,cough,sore_throat,runny_nose,fever,1,0,0,0,0,0,0,0,0,0,0,0,0
+Influenza,fever,cough,fatigue,body_aches,1,0,0,0,0,0,0,0,0,0,0,0,0
+COVID-19,fever,cough,loss_of_taste,loss_of_smell,1,0,0,0,0,0,0,0,0,0,0,0,0
+Gastroenteritis,nausea,vomiting,diarrhea,abdominal_pain,1,0,0,0,0,0,0,0,0,0,0,0,0
+Migraine,headache,nausea,sensitivity_to_light,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Hypertension,headache,dizziness,fatigue,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Diabetes,fatigue,thirst,frequent_urination,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Asthma,shortness_of_breath,wheezing,cough,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Arthritis,joint_pain,stiffness,fatigue,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Peptic Ulcer Disease,abdominal_pain,nausea,vomiting,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+GERD,heartburn,regurgitation,chest_pain,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Depression,fatigue,sadness,sleep_disturbance,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Anxiety,restlessness,fatigue,irritability,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Osteoarthritis,joint_pain,stiffness,swelling,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Pneumonia,fever,cough,shortness_of_breath,chest_pain,1,0,0,0,0,0,0,0,0,0,0,0,0
+UTI,frequent_urination,burning_urination,abdominal_pain,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Sinusitis,facial_pain,headache,nasal_congestion,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Bronchitis,cough,mucus,chest_discomfort,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Conjunctivitis,red_eye,itching_eye,watery_eye,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+

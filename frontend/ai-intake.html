@@ -469,14 +469,14 @@
             <li><a href="index.html"><span>📊</span> Dashboard</a></li>
             <li><a href="ai-intake.html" class="active"><span>🧠</span> AI Intake</a></li>
             <li><a href="chatbot.html"><span>💬</span> AI Chatbot</a></li>
+            <li><a href="vital-signs-camera.html"><span>📸</span> Vital Signs</a></li>
             <li><a href="insurance.html"><span>🛡️</span> Insurance</a></li>
         </ul>
         <div class="sidebar-footer">
             <div class="user-info">
                 <span class="user-avatar">👤</span>
-                <span class="user-name">User</span>
+                <span class="user-name">Guest</span>
             </div>
-            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
         </div>
     </nav>
 
@@ -599,13 +599,9 @@
     <input type="file" id="insurance-file-input" accept="image/*,.pdf" style="display: none;">
 
     <script src="scripts/config.js"></script>
-    <script src="scripts/auth.js?v=3"></script>
+    <script src="scripts/auth.js?v=6"></script>
     <script>
-        if (!requireAuth()) {
-            // Will redirect to login
-        } else {
-            updateUserDisplay();
-        }
+        // Authentication is currently disabled; auth.js is retained for later use.
     </script>
     <script src="scripts/ai-intake-chat.js"></script>
     <script>

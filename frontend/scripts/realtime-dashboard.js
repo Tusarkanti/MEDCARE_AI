@@ -4,7 +4,8 @@
  * - Time-based vitals records (history tracking)
  * - Vitals history charts
  * - High value flagging and alerts
- * - Firebase sync via n8n webhook
+ * - Backend API sync (MongoDB)
+ * - Multi-user support with user_id
  */
 
 document.addEventListener('DOMContentLoaded', initializeRealtimeDashboard);
@@ -12,8 +13,9 @@ document.addEventListener('DOMContentLoaded', initializeRealtimeDashboard);
 let currentPatientData = null;
 let vitalsHistory = [];
 
-function getWebhookUrl() {
-  return APP_CONFIG?.webhookUrl || 'https://tusarrr.app.n8n.cloud/webhook/medical-assistant';
+function getUserId() {
+  const user = getUser();
+  return user?.user_id || localStorage.getItem('medcare_user_id') || 'guest';
 }
 
 function initializeRealtimeDashboard() {
@@ -27,7 +29,7 @@ function initializeRealtimeDashboard() {
   });
 
   window.addEventListener('storage', (e) => {
-    if (e.key && e.key.startsWith('medcare_')) {
+    if (e.key && (e.key.startsWith('medcare_') || e.key === 'medcare_user_id')) {
       console.log('📊 Storage change detected');
       loadFromLocalStorage();
     }
@@ -35,6 +37,76 @@ function initializeRealtimeDashboard() {
 }
 
 function loadFromLocalStorage() {
+  const userId = getUserId();
+  if (!userId) {
+    showNoDataState();
+    return;
+  }
+
+  // Try to load from MongoDB via API first (for multi-user)
+  loadFromApi(userId).catch(() => {
+    // Fallback to localStorage
+    loadFromLocalStorageFallback(userId);
+  });
+}
+
+async function loadFromApi(userId) {
+  try {
+    const response = await fetch(getUserPatientsUrl(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch from API');
+    }
+    
+    const result = await response.json();
+    
+    if (result.success && result.patients && result.patients.length > 0) {
+      // Use the most recent patient data
+      currentPatientData = result.patients[0];
+      
+      // Load vitals from API
+      await loadVitalsFromApi(userId);
+      
+      updateDashboardWithPatientData(currentPatientData);
+    } else {
+      showNoDataState();
+    }
+  } catch (error) {
+    console.error('Error loading from API:', error);
+    throw error;
+  }
+}
+
+async function loadVitalsFromApi(userId) {
+  try {
+    const response = await fetch(getUserVitalsUrl(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      }
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.vitals) {
+        vitalsHistory = result.vitals;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading vitals from API:', error);
+  }
+}
+
+function loadFromLocalStorageFallback(userId) {
+  // Legacy support - tries to load from mobile_number based storage
+  // This provides backward compatibility
   const patientId = localStorage.getItem('medcare_mobile_number');
   if (!patientId) {
     showNoDataState();
@@ -52,7 +124,9 @@ function loadFromLocalStorage() {
     if (data && (data.name || data.full_name)) {
       currentPatientData = data;
       
-      const historyStr = localStorage.getItem(`medcare_vitals_history_${patientId}`);
+      const historyStr =
+        localStorage.getItem(`medcare_vitals_history_${patientId}`) ||
+        localStorage.getItem(`medcare_vitals_history_${userId}`);
       if (historyStr) {
         vitalsHistory = JSON.parse(historyStr);
       } else {
@@ -558,11 +632,7 @@ async function submitVitals() {
     return;
   }
   
-  const patientId = localStorage.getItem('medcare_mobile_number');
-  if (!patientId) {
-    alert('Please complete patient intake first');
-    return;
-  }
+  const userId = getUserId();
   
   const timestamp = new Date().toISOString();
   const vitalRecord = {
@@ -572,38 +642,57 @@ async function submitVitals() {
     temperature: temperature || null
   };
   
+  // Add to local history
   vitalsHistory.push(vitalRecord);
-  localStorage.setItem(`medcare_vitals_history_${patientId}`, JSON.stringify(vitalsHistory));
   
-  const patientData = JSON.parse(localStorage.getItem(`medcare_patient_${patientId}`) || '{}');
-  if (heartRate) patientData.heartRate = heartRate;
-  if (bloodPressure) patientData.bloodPressure = bloodPressure;
-  if (temperature) patientData.temperature = temperature;
-  patientData.updatedAt = timestamp;
-  localStorage.setItem(`medcare_patient_${patientId}`, JSON.stringify(patientData));
-  
+  // Try to save to API first (multi-user)
   try {
-    await fetch(getWebhookUrl(), {
+    const response = await fetch(getUserVitalsUrl(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'submit_vitals',
-        phone_number: patientId,
-        vital_record: vitalRecord,
-        latest_vitals: {
-          heartRate: heartRate || patientData.heartRate,
-          bloodPressure: bloodPressure || patientData.bloodPressure,
-          temperature: temperature || patientData.temperature
-        },
-        timestamp
-      })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      },
+      body: JSON.stringify(vitalRecord)
     });
-    console.log('✅ Vitals synced to webhook');
+    
+    if (response.ok) {
+      console.log('✅ Vitals saved to MongoDB');
+    }
   } catch (error) {
     console.log('Vitals saved locally, sync pending');
   }
   
+  // Also save locally for backup
+  localStorage.setItem(`medcare_vitals_history_${userId}`, JSON.stringify(vitalsHistory));
+  const mobileNumber = localStorage.getItem('medcare_mobile_number');
+  if (mobileNumber) {
+    localStorage.setItem(`medcare_vitals_history_${mobileNumber}`, JSON.stringify(vitalsHistory));
+  }
+  
+  // Update current patient data
+  const patientData = currentPatientData || {};
+  if (heartRate) patientData.heartRate = heartRate;
+  if (bloodPressure) patientData.bloodPressure = bloodPressure;
+  if (temperature) patientData.temperature = temperature;
+  patientData.updatedAt = timestamp;
+  
   currentPatientData = patientData;
+  
+  // Try to save patient data to API
+  try {
+    await fetch(getUserPatientsUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      },
+      body: JSON.stringify(patientData)
+    });
+  } catch (error) {
+    console.log('Patient data saved locally');
+  }
+  
   updateDashboardWithPatientData(patientData);
   
   document.getElementById('input-heartRate').value = '';

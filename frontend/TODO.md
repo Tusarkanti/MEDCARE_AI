@@ -1,6 +1,9 @@
-# TODO: Remove Add Buttons from Vital Signs Overview
+# Frontend Stabilization TODO
 
-- [x] Remove the "Add" button next to Heart Rate in frontend/index.html (No such buttons exist in the current HTML)
-- [x] Remove the "Add" button next to Blood Pressure in frontend/index.html (No such buttons exist in the current HTML)
-- [x] Remove the "Add" button next to Temperature in frontend/index.html (No such buttons exist in the current HTML)
-- [x] Verify the changes by checking the updated HTML (Verified: No "Add" buttons present in vital signs cards)
+- [x] Remove webhook transport dependencies
+- [x] Route chatbot/intake/insurance to backend APIs
+- [x] Add email verification API integration in auth script
+- [ ] Add structured intake UI fields (duration, severity, conditions, risk factors)
+- [ ] Add explainability panels in analyzer UI
+- [ ] Add signal-quality indicators to vital signs UI
+- [ ] Full responsive and accessibility polish pass

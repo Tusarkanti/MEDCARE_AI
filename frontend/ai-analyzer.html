@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI Health Analyzer - ML-Powered Disease Risk Prediction">
+    <title>AI Health Analyzer - MedCare AI</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        .analyzer-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .analyzer-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .analyzer-header h1 {
+            color: #ffffff;
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        
+        .analyzer-header p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1rem;
+        }
+        
+        .model-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 16px;
+        }
+        
+        .model-status.online {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+        }
+        
+        .model-status.offline {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.online { background: #10b981; }
+        .status-dot.offline { background: #ef4444; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .analyzer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        
+        @media (max-width: 900px) {
+            .analyzer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .input-card {
+            background: linear-gradient(145deg, rgba(14, 14, 16, 0.98) 0%, rgba(18, 18, 22, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        
+        .card-header h3 {
+            color: #ffffff;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #e50914;
+            box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.1);
+        }
+        
+        .symptoms-section h4 {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+        }
+        
+        .symptoms-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        .symptom-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .symptom-checkbox:hover {
+            background: rgba(229, 9, 20, 0.1);
+            border-color: rgba(229, 9, 20, 0.2);
+        }
+        
+        .symptom-checkbox.selected {
+            background: rgba(229, 9, 20, 0.15);
+            border-color: rgba(229, 9, 20, 0.4);
+        }
+        
+        .symptom-checkbox input {
+            display: none;
+        }
+        
+        .symptom-checkbox .checkmark {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .symptom-checkbox.selected .checkmark {
+            background: #e50914;
+            border-color: #e50914;
+        }
+        
+        .symptom-checkbox .checkmark::after {
+            content: '✓';
+            color: white;
+            font-size: 0.7rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .symptom-checkbox.selected .checkmark::after {
+            opacity: 1;
+        }
+        
+        .symptom-checkbox span {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85rem;
+        }
+        
+        .analyze-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .analyze-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(229, 9, 20, 0.4);
+        }
+        
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .analyze-btn .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+        
+        .analyze-btn.loading .spinner {
+            display: block;
+        }
+        
+        .analyze-btn.loading .btn-text {
+            display: none;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Results Section */
+        .results-card {
+            background: linear-gradient(145deg, rgba(14, 14, 16, 0.98) 0%, rgba(18, 18, 22, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        
+        .risk-level {
+            text-align: center;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .risk-level.high {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+        
+        .risk-level.medium {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+        
+        .risk-level.low {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+        
+        .risk-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+        
+        .risk-label {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .risk-level.high .risk-label { color: #ef4444; }
+        .risk-level.medium .risk-label { color: #f59e0b; }
+        .risk-level.low .risk-label { color: #10b981; }
+        
+        .risk-confidence {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+        
+        .predictions-list {
+            margin-bottom: 24px;
+        }
+        
+        .prediction-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .prediction-item.top {
+            border: 1px solid rgba(229, 9, 20, 0.3);
+        }
+        
+        .disease-name {
+            flex: 1;
+            color: #ffffff;
+            font-weight: 500;
+        }
+        
+        .probability-bar {
+            flex: 2;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .probability-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e50914 0%, #ff4757 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .probability-value {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 600;
+            min-width: 50px;
+            text-align: right;
+        }
+        
+        .recommendation-box {
+            padding: 16px;
+            background: rgba(229, 9, 20, 0.1);
+            border: 1px solid rgba(229, 9, 20, 0.2);
+            border-radius: 12px;
+        }
+        
+        .recommendation-box h4 {
+            color: #e50914;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+        
+        .recommendation-box p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .no-results .icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .sidebar-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+        .user-avatar { font-size: 1.2rem; }
+        .logout-btn {
+            width: 100%;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover { background: rgba(239, 68, 68, 0.25); }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
+    <div class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+
+    <!-- Navigation Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>🏥 MedCare AI</h2>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="index.html"><span>📊</span> Dashboard</a></li>
+            <li><a href="ai-intake.html"><span>🧠</span> AI Intake</a></li>
+            <li><a href="ai-analyzer.html" class="active"><span>🔬</span> AI Analyzer</a></li>
+            <li><a href="chatbot.html"><span>💬</span> AI Chatbot</a></li>
+            <li><a href="vital-signs-camera.html"><span>📸</span> Vital Signs</a></li>
+            <li><a href="insurance.html"><span>🛡️</span> Insurance</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <span class="user-avatar">👤</span>
+                <span class="user-name">Guest</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <header class="header">
+            <div class="header-content">
+                <div>
+                    <h1>🔬 AI Health Analyzer</h1>
+                    <p>ML-Powered Disease Risk Prediction using Ensemble Learning</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Analyzer Container -->
+        <div class="analyzer-container">
+            <!-- Model Status -->
+            <div class="analyzer-header">
+                <div id="model-status" class="model-status offline">
+                    <span class="status-dot offline"></span>
+                    <span>Checking model status...</span>
+                </div>
+            </div>
+
+            <div class="analyzer-grid">
+                <!-- Input Card -->
+                <div class="input-card">
+                    <div class="card-header">
+                        <h3>📝 Patient Information</h3>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Age</label>
+                        <input type="number" id="patient-age" placeholder="Enter age" min="1" max="120">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <select id="patient-gender">
+                            <option value="">Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="symptoms-section">
+                        <h4>Select Symptoms <span id="selected-count" style="font-size: 0.8rem; color: rgba(255,255,255,0.55); font-weight: 400;">0 selected</span></h4>
+                        <div class="symptoms-grid" id="symptoms-grid">
+                            <!-- Symptoms will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <button id="analyze-btn" class="analyze-btn" onclick="analyzeHealth()">
+                        <span class="btn-text">🔍 Analyze Health Risk</span>
+                        <span class="spinner"></span>
+                    </button>
+                </div>
+                
+                <!-- Results Card -->
+                <div class="results-card">
+                    <div class="card-header">
+                        <h3>📊 Analysis Results</h3>
+                    </div>
+                    
+                    <div id="results-container">
+                        <div class="no-results">
+                            <div class="icon">🔬</div>
+                            <h3>No Analysis Yet</h3>
+                            <p>Enter patient information and select symptoms, then click "Analyze" to get predictions.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="scripts/config.js"></script>
+    <script src="scripts/auth.js?v=6"></script>
+    <script>
+        // Authentication is currently disabled; auth.js is retained for later use.
+    </script>
+    <script src="scripts/ai-analyzer.js?v=2"></script>
+    <script>
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.mobile-overlay');
+    sidebar.classList.toggle('active');
+    overlay.classList.toggle('active');
+    document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+}
+
+// Close menu when clicking a nav link on mobile
+document.querySelectorAll('.sidebar-menu a').forEach(link => {
+    link.addEventListener('click', () => {
+        if (window.innerWidth <= 767) {
+            toggleMobileMenu();
+        }
+    });
+});
+
+// Close menu on resize to desktop
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 767) {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.mobile-overlay');
+        if (sidebar) sidebar.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+});
+</script>
+</body>
+</html>

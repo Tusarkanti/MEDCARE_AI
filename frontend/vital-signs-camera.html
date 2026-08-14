@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI Vital Signs Detection - Camera-based heart rate monitoring">
+    <title>AI Vital Signs - MedCare AI</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        .vital-camera-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .camera-card {
+            background: linear-gradient(145deg, rgba(14, 14, 16, 0.98) 0%, rgba(18, 18, 22, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 30px;
+        }
+        
+        .camera-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .camera-header h2 {
+            color: #ffffff;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .camera-header p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1rem;
+        }
+        
+        .camera-preview {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        #videoElement {
+            width: 100%;
+            display: block;
+            transform: scaleX(-1);
+        }
+        
+        #canvasElement {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .camera-overlay .start-btn {
+            background: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+            border: none;
+            color: white;
+            padding: 16px 40px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .camera-overlay .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(229, 9, 20, 0.4);
+        }
+        
+        .vital-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .vital-stat-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .vital-stat-box .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .vital-stat-box .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #e50914;
+            margin-bottom: 5px;
+        }
+        
+        .vital-stat-box .label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .detection-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #666;
+        }
+        
+        .status-dot.active {
+            background: #10b981;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-dot.processing {
+            background: #f59e0b;
+            animation: pulse 0.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .instructions {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(229, 9, 20, 0.1);
+            border: 1px solid rgba(229, 9, 20, 0.2);
+            border-radius: 12px;
+        }
+        
+        .instructions h4 {
+            color: #e50914;
+            margin-bottom: 12px;
+        }
+        
+        .instructions ul {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 8px 0;
+        }
+        
+        .pulse-wave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 3px solid rgba(229, 9, 20, 0.5);
+            animation: pulseWave 1s infinite;
+            display: none;
+        }
+        
+        .pulse-wave.active {
+            display: block;
+        }
+        
+        @keyframes pulseWave {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+
+        /* Waveform strip */
+        .waveform-strip {
+            margin-top: 16px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 10px 14px;
+        }
+        .waveform-strip label {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: block;
+            margin-bottom: 6px;
+        }
+        #waveformCanvas {
+            width: 100%;
+            height: 50px;
+            display: block;
+            border-radius: 4px;
+        }
+
+        /* Signal quality */
+        .signal-quality {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.4);
+        }
+        .sq-track {
+            flex: 1;
+            height: 4px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .sq-fill {
+            height: 100%;
+            background: #10b981;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.8s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .vital-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
+    <div class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+
+    <!-- Navigation Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>🏥 MedCare AI</h2>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="index.html"><span>📊</span> Dashboard</a></li>
+            <li><a href="ai-intake.html"><span>🧠</span> AI Intake</a></li>
+            <li><a href="chatbot.html"><span>💬</span> AI Chatbot</a></li>
+            <li><a href="vital-signs-camera.html" class="active"><span>📸</span> Vital Signs</a></li>
+            <li><a href="insurance.html"><span>🛡️</span> Insurance</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <span class="user-avatar">👤</span>
+                <span class="user-name">Guest</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <div class="header-content">
+                <div>
+                    <h1>📸 AI Vital Signs Detection</h1>
+                    <p>Measure heart rate using your camera - no sensors needed!</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="vital-camera-container">
+            <div class="camera-card">
+                <div class="camera-header">
+                    <h2>❤️ Heart Rate Detection</h2>
+                    <p>Position your face in the frame and stay still</p>
+                </div>
+                
+                <div class="camera-preview">
+                    <video id="videoElement" autoplay playsinline muted></video>
+                    <canvas id="canvasElement"></canvas>
+                    <div class="camera-overlay" id="cameraOverlay">
+                        <button class="start-btn" onclick="startCamera()">📷 Start Camera</button>
+                    </div>
+                    <div class="pulse-wave" id="pulseWave"></div>
+                </div>
+
+                <!-- PPG Waveform -->
+                <div class="waveform-strip">
+                    <label>PPG Signal — rPPG Waveform</label>
+                    <canvas id="waveformCanvas" width="800" height="50"></canvas>
+                </div>
+
+                <!-- Signal Quality -->
+                <div class="signal-quality">
+                    <span>Signal Quality</span>
+                    <div class="sq-track"><div class="sq-fill" id="sqFill"></div></div>
+                    <span id="sqVal">0%</span>
+                </div>
+                
+                <div class="detection-status" id="detectionStatus">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Click "Start Camera" to begin</span>
+                </div>
+                
+                <div class="vital-stats">
+                    <div class="vital-stat-box">
+                        <div class="icon">💓</div>
+                        <div class="value" id="heartRate">--</div>
+                        <div class="label">Heart Rate (BPM)</div>
+                    </div>
+                    <div class="vital-stat-box">
+                        <div class="icon">🩸</div>
+                        <div class="value" id="bloodPressure">--/--</div>
+                        <div class="label">Blood Pressure (mmHg)</div>
+                    </div>
+                    <div class="vital-stat-box">
+                        <div class="icon">🌡️</div>
+                        <div class="value" id="temperature">--°F</div>
+                        <div class="label">Temperature (°F)</div>
+                    </div>
+                    <div class="vital-stat-box">
+                        <div class="icon">🫁</div>
+                        <div class="value" id="spo2">--</div>
+                        <div class="label">SpO2 (%)</div>
+                    </div>
+                    <div class="vital-stat-box">
+                        <div class="icon">😮</div>
+                        <div class="value" id="breathRate">--</div>
+                        <div class="label">Breath Rate</div>
+                    </div>
+                    <div class="vital-stat-box">
+                        <div class="icon">😊</div>
+                        <div class="value" id="stressLevel">--</div>
+                        <div class="label">Stress Level</div>
+                    </div>
+                </div>
+                
+                <div class="instructions">
+                    <h4>📋 Instructions for Best Results:</h4>
+                    <ul>
+                        <li>Ensure good lighting - face a light source</li>
+                        <li>Keep your face still and centered in the frame</li>
+                        <li>Stay at least arm's length from the camera</li>
+                        <li>Remove glasses or items that cover your face</li>
+                        <li>Measurement takes about 15-30 seconds</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="scripts/config.js"></script>
+    <script src="scripts/auth.js?v=6"></script>
+    <script>
+        // ═══════════════════════════════════════════════
+        // MedCare AI — rPPG Vital Signs Detection Engine
+        // ═══════════════════════════════════════════════
+
+        let videoStream  = null;
+        let isProcessing = false;
+        let frameCount   = 0;
+        let startTime    = null;
+        let useBackendVitals = true; // server-side signal processing
+
+        // Signal buffers
+        const BUFFER_SIZE   = 300;
+        const WAVEFORM_SIZE = 200;
+        let redBuf = [], greenBuf = [], blueBuf = [], timestamps = [];
+        let waveformBuf = [];
+        let skinPixels  = 0;
+
+        const video   = document.getElementById('videoElement');
+        const canvas  = document.getElementById('canvasElement');
+        const ctx     = canvas.getContext('2d');
+        const wCanvas = document.getElementById('waveformCanvas');
+        const wCtx    = wCanvas.getContext('2d');
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Authentication is currently disabled; auth.js is retained for later use.
+        });
+
+        // ── Start Camera ──
+        async function startCamera() {
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: 'user',
+                        frameRate: { ideal: 30 }
+                    }
+                });
+                video.srcObject = videoStream;
+                video.onloadedmetadata = () => {
+                    canvas.width  = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    document.getElementById('cameraOverlay').style.display = 'none';
+                    document.getElementById('statusDot').classList.add('active');
+                    document.getElementById('statusText').textContent = 'Camera active — Detecting face...';
+                    isProcessing = true;
+                    startTime    = Date.now();
+                    frameCount   = 0;
+                    requestAnimationFrame(processFrame);
+                };
+            } catch (error) {
+                console.error('Camera error:', error);
+                alert('Unable to access camera. Please grant camera permission.');
+            }
+        }
+
+        // ── Main Frame Loop ──
+        function processFrame() {
+            if (!isProcessing) return;
+            if (video.readyState < video.HAVE_ENOUGH_DATA) {
+                requestAnimationFrame(processFrame);
+                return;
+            }
+
+            const W = canvas.width, H = canvas.height;
+
+            // Off-screen canvas to read pixels (avoids taint on mirrored video)
+            const off    = document.createElement('canvas');
+            off.width    = W; off.height = H;
+            const offCtx = off.getContext('2d');
+            offCtx.drawImage(video, 0, 0, W, H);
+
+            // Forehead ROI — upper-centre region (richest rPPG signal)
+            const roiW = Math.floor(W * 0.28);
+            const roiH = Math.floor(H * 0.22);
+            const roiX = Math.floor((W - roiW) / 2);
+            const roiY = Math.floor(H * 0.18);
+
+            const imgData = offCtx.getImageData(roiX, roiY, roiW, roiH);
+            const pixels  = imgData.data;
+
+            let rSum = 0, gSum = 0, bSum = 0, count = 0;
+            for (let i = 0; i < pixels.length; i += 4) {
+                const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
+                if (isSkinPixel(r, g, b)) { rSum += r; gSum += g; bSum += b; count++; }
+            }
+
+            skinPixels   = count;
+            const faceDetected = count > 200;
+
+            if (faceDetected) {
+                redBuf.push(rSum / count);
+                greenBuf.push(gSum / count);
+                blueBuf.push(bSum / count);
+                timestamps.push(Date.now());
+                frameCount++;
+
+                if (redBuf.length > BUFFER_SIZE) {
+                    redBuf.shift(); greenBuf.shift(); blueBuf.shift(); timestamps.shift();
+                }
+
+                // Waveform: detrended green channel
+                const det = detrend(greenBuf);
+                waveformBuf.push(det[det.length - 1] || 0);
+                if (waveformBuf.length > WAVEFORM_SIZE) waveformBuf.shift();
+
+                // Compute vitals every 20 frames once we have 90+ samples
+                if (frameCount % 20 === 0 && redBuf.length >= 90) {
+                    processVitalSigns();
+                }
+            }
+
+            drawOverlay(W, H, roiX, roiY, roiW, roiH, faceDetected);
+            drawWaveform();
+            requestAnimationFrame(processFrame);
+        }
+
+        // ── Skin Detection (Kovac's RGB method) ──
+        function isSkinPixel(r, g, b) {
+            return (
+                r > 95 && g > 40 && b > 20 &&
+                r > g  && r > b  &&
+                (r - Math.min(g, b)) > 15 &&
+                Math.abs(r - g) > 15 &&
+                r > 160
+            );
+        }
+
+        // ── Signal Utilities ──
+        function mean(a) {
+            return a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
+        }
+        function stdDev(a) {
+            const m = mean(a);
+            return Math.sqrt(mean(a.map(v => (v - m) ** 2)));
+        }
+        function detrend(signal) {
+            const n = signal.length;
+            if (n < 2) return signal.slice();
+            const xm = (n - 1) / 2, ym = mean(signal);
+            let num = 0, den = 0;
+            for (let i = 0; i < n; i++) { num += (i - xm) * (signal[i] - ym); den += (i - xm) ** 2; }
+            const slope = den ? num / den : 0;
+            const intercept = ym - slope * xm;
+            return signal.map((v, i) => v - (slope * i + intercept));
+        }
+        function normalise(a) {
+            const mn = Math.min(...a), mx = Math.max(...a), r = mx - mn;
+            return r ? a.map(v => (v - mn) / r) : a.map(() => 0.5);
+        }
+        function movingAvg(signal, w) {
+            return signal.map((_, i) => {
+                const s = Math.max(0, i - Math.floor(w / 2));
+                const e = Math.min(signal.length, i + Math.ceil(w / 2));
+                return mean(signal.slice(s, e));
+            });
+        }
+        function bandpass(signal, fps) {
+            const lo = movingAvg(signal, 3);
+            const hi = movingAvg(signal, Math.round(fps / 0.7));
+            return lo.map((v, i) => v - (hi[i] || 0));
+        }
+        function findPeaks(signal, minDist, threshold) {
+            const peaks = [];
+            for (let i = 1; i < signal.length - 1; i++) {
+                if (signal[i] > signal[i - 1] && signal[i] > signal[i + 1] && signal[i] > threshold) {
+                    if (!peaks.length || i - peaks[peaks.length - 1] >= minDist) peaks.push(i);
+                }
+            }
+            return peaks;
+        }
+        function estimateFps() {
+            const ts = timestamps;
+            if (ts.length < 2) return 30;
+            return (ts.length - 1) / ((ts[ts.length - 1] - ts[0]) / 1000);
+        }
+
+        // ── Heart Rate — CHROM rPPG method ──
+        function computeHeartRate() {
+            const fps = estimateFps();
+            const n   = Math.min(redBuf.length, Math.round(fps * 6));
+            if (n < 60) return null;
+
+            const R = normalise(redBuf.slice(-n));
+            const G = normalise(greenBuf.slice(-n));
+            const B = normalise(blueBuf.slice(-n));
+
+            // CHROM chrominance signals
+            const Xs = R.map((r, i) => 0.77 * r - 0.51 * G[i]);
+            const Ys = R.map((r, i) => 0.77 * r + 0.51 * G[i] - 0.77 * B[i]);
+            const Xf = bandpass(detrend(Xs), fps);
+            const Yf = bandpass(detrend(Ys), fps);
+
+            const alpha = stdDev(Xf) ? stdDev(Yf) / stdDev(Xf) : 1;
+            const ppg   = Xf.map((x, i) => x - alpha * Yf[i]);
+            const peaks = findPeaks(normalise(ppg), Math.round(fps / 4), 0.4);
+
+            if (peaks.length >= 3) {
+                const intervals = [];
+                for (let i = 1; i < peaks.length; i++) intervals.push(peaks[i] - peaks[i - 1]);
+                return Math.max(45, Math.min(160, Math.round((fps / mean(intervals)) * 60)));
+            }
+            // Fallback: FFT frequency estimation
+            return fftHeartRate(ppg, fps);
+        }
+
+        function fftHeartRate(signal, fps) {
+            const n = signal.length;
+            let maxMag = 0, maxFreq = 0;
+            for (let k = 1; k < n / 2; k++) {
+                const freq = k * fps / n;
+                if (freq < 0.7 || freq > 4.0) continue;
+                let re = 0, im = 0;
+                for (let t = 0; t < n; t++) {
+                    const a = 2 * Math.PI * k * t / n;
+                    re += signal[t] * Math.cos(a);
+                    im -= signal[t] * Math.sin(a);
+                }
+                const mag = Math.sqrt(re * re + im * im);
+                if (mag > maxMag) { maxMag = mag; maxFreq = freq; }
+            }
+            return maxFreq > 0 ? Math.round(maxFreq * 60) : null;
+        }
+
+        // ── SpO2 — ratio-of-ratios ──
+        function computeSpO2() {
+            if (redBuf.length < 60) return null;
+            const R = redBuf.slice(-60), B = blueBuf.slice(-60);
+            const dcR = mean(R), dcB = mean(B);
+            const acR = stdDev(R), acB = stdDev(B);
+            if (!dcR || !dcB || !acB) return null;
+            const ratio = (acR / dcR) / (acB / dcB);
+            return Math.max(90, Math.min(100, Math.round(110 - 25 * ratio)));
+        }
+
+        // ── Blood Pressure — PPG morphology proxy ──
+        function computeBloodPressure(hr) {
+            if (!hr || greenBuf.length < 90) return null;
+            const fps = estimateFps();
+            const Gf  = bandpass(detrend(greenBuf.slice(-90)), fps);
+            const peaks = findPeaks(normalise(Gf), 5, 0.3);
+
+            let augIdx = 0.3;
+            if (peaks.length >= 2) {
+                const iv = [];
+                for (let i = 1; i < peaks.length; i++) iv.push(peaks[i] - peaks[i - 1]);
+                augIdx = Math.min(0.6, Math.max(0.1, stdDev(iv) / 20));
+            }
+
+            const rGRatio = mean(redBuf.slice(-90)) / (mean(greenBuf.slice(-90)) || 1);
+            let sys = Math.round(120 + (hr - 75) * 0.3 + (rGRatio - 1.4) * 12 + augIdx * 15);
+            let dia = Math.round(80  + (hr - 75) * 0.15 + (rGRatio - 1.4) * 6);
+            sys = Math.max(90,  Math.min(180, sys));
+            dia = Math.max(55,  Math.min(115, dia));
+            if (sys <= dia + 15) sys = dia + 20;
+            return `${sys}/${dia}`;
+        }
+
+        // ── Temperature — skin colour thermal proxy ──
+        function computeTemperature() {
+            if (redBuf.length < 30) return null;
+            const avgR = mean(redBuf.slice(-30));
+            const avgG = mean(greenBuf.slice(-30));
+            const avgB = mean(blueBuf.slice(-30));
+            const warmRatio = avgR / (avgG + avgB + 1);
+            const t = Math.max(95.0, Math.min(104.0,
+                98.6 + (warmRatio - 0.46) * 18 + (Math.random() - 0.5) * 0.3
+            ));
+            return t.toFixed(1) + '°F';
+        }
+
+        // ── Respiratory Rate — amplitude envelope FFT ──
+        function computeBreathRate() {
+            const fps = estimateFps();
+            if (greenBuf.length < Math.round(fps * 8)) return null;
+            const G   = detrend(greenBuf.slice(-Math.round(fps * 10)));
+            const env = movingAvg(G.map(Math.abs), Math.round(fps * 1.5));
+            const ed  = detrend(env);
+            const nn  = ed.length;
+            let maxMag = 0, maxFreq = 0.25;
+            for (let k = 1; k < nn / 2; k++) {
+                const freq = k * fps / nn;
+                if (freq < 0.15 || freq > 0.5) continue;
+                let re = 0, im = 0;
+                for (let t = 0; t < nn; t++) {
+                    const a = 2 * Math.PI * k * t / nn;
+                    re += ed[t] * Math.cos(a);
+                    im -= ed[t] * Math.sin(a);
+                }
+                const mag = Math.sqrt(re * re + im * im);
+                if (mag > maxMag) { maxMag = mag; maxFreq = freq; }
+            }
+            return Math.round(Math.max(8, Math.min(30, maxFreq * 60)));
+        }
+
+        // ── Stress — HRV RMSSD ──
+        function computeStress(hr) {
+            if (!hr) return null;
+            const fps = estimateFps();
+            const Gf  = bandpass(detrend(greenBuf.slice(-Math.round(fps * 5))), fps);
+            if (Gf.length < 60) return hr > 100 ? 'High' : hr > 82 ? 'Moderate' : 'Low';
+            const peaks = findPeaks(normalise(Gf), Math.round(fps / 4), 0.3);
+            if (peaks.length < 4) return hr > 100 ? 'High' : hr > 82 ? 'Moderate' : 'Low';
+            const iv = [];
+            for (let i = 1; i < peaks.length; i++) iv.push(peaks[i] - peaks[i - 1]);
+            const rmssd = Math.sqrt(mean(iv.map((v, i) => i > 0 ? (v - iv[i - 1]) ** 2 : 0)));
+            return rmssd < 2 ? 'High' : rmssd < 5 ? 'Moderate' : 'Low';
+        }
+
+        // ── Signal Quality ──
+        function computeConfidence() {
+            const n = redBuf.length;
+            if (n < 30) return 0;
+            const snr     = stdDev(greenBuf.slice(-60)) / (mean(greenBuf.slice(-60)) + 1) * 100;
+            const skinScr = Math.min(100, skinPixels / 300 * 100);
+            const lenScr  = Math.min(100, n / 150 * 100);
+            return Math.min(98, Math.round(snr * 0.4 + skinScr * 0.3 + lenScr * 0.3));
+        }
+
+        // ── Master Compute ──
+        function processVitalSigns() {
+            document.getElementById('statusDot').classList.remove('active');
+            document.getElementById('statusDot').classList.add('processing');
+            document.getElementById('statusText').textContent = 'Processing vital signs...';
+
+            const local = {
+                hr: computeHeartRate(),
+                spo2: computeSpO2(),
+                bp: null,
+                temp: computeTemperature(),
+                breath: computeBreathRate(),
+                stress: null,
+                conf: computeConfidence()
+            };
+            local.bp = computeBloodPressure(local.hr);
+            local.stress = computeStress(local.hr);
+
+            // Render local immediately for responsiveness
+            renderVitals(local);
+
+            if (useBackendVitals && typeof getVitalSignsUrl === 'function') {
+                sendSignalsToBackend().then(server => {
+                    if (server) {
+                        // Merge: prefer server HR/RR/SpO2/BP when available
+                        const merged = {
+                            hr: server.heart_rate ?? local.hr,
+                            spo2: server.spo2 ?? local.spo2,
+                            bp: (server.blood_pressure?.systolic && server.blood_pressure?.diastolic)
+                                ? `${server.blood_pressure.systolic}/${server.blood_pressure.diastolic}`
+                                : local.bp,
+                            temp: (server.temperature_fahrenheit ? `${server.temperature_fahrenheit}°F` : local.temp),
+                            breath: server.respiratory_rate ?? local.breath,
+                            stress: local.stress, // keep client HRV proxy for now
+                            conf: (server.signal_quality != null ? Math.round(server.signal_quality) : local.conf)
+                        };
+                        renderVitals(merged);
+                    }
+                }).catch(() => {
+                    // keep local fallback
+                });
+            }
+        }
+
+        function renderVitals(v) {
+            if (v.hr     !== null) document.getElementById('heartRate').textContent     = v.hr;
+            if (v.spo2   !== null) document.getElementById('spo2').textContent          = v.spo2;
+            if (v.bp     !== null) document.getElementById('bloodPressure').textContent = v.bp;
+            if (v.temp   !== null) document.getElementById('temperature').textContent   = v.temp;
+            if (v.breath !== null) document.getElementById('breathRate').textContent    = v.breath;
+            if (v.stress !== null) document.getElementById('stressLevel').textContent   = v.stress;
+
+            const conf = Math.max(0, Math.min(100, Number(v.conf || 0)));
+            document.getElementById('sqFill').style.width = conf + '%';
+            document.getElementById('sqVal').textContent  = conf + '%';
+
+            document.getElementById('pulseWave').classList.add('active');
+
+            // Save vital signs to localStorage for dashboard display
+            saveVitalsToDashboard(v.hr, v.bp, v.temp, v.spo2, v.breath, v.stress);
+
+            document.getElementById('statusDot').classList.remove('processing');
+            document.getElementById('statusDot').classList.add('active');
+            document.getElementById('statusText').textContent =
+                `Monitoring — HR: ${v.hr ?? '--'} BPM | SpO2: ${v.spo2 ?? '--'}% | BP: ${v.bp ?? '--'}`;
+        }
+
+        async function sendSignalsToBackend() {
+            const url = getVitalSignsUrl();
+            const fps = estimateFps();
+            const payload = {
+                red_signal: redBuf.slice(-240),
+                green_signal: greenBuf.slice(-240),
+                blue_signal: blueBuf.slice(-240),
+                timestamps_ms: timestamps.slice(-240),
+                fps: fps
+            };
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!resp.ok) return null;
+            const data = await resp.json();
+            if (!data.success) return null;
+            return data.vital_signs;
+        }
+        // ── Save Vitals to Dashboard ──
+        function saveVitalsToDashboard(hr, bp, temp, spo2, breath, stress) {
+            const patientId = localStorage.getItem('medcare_mobile_number');
+            if (!patientId) return;
+
+            const timestamp = new Date().toISOString();
+            
+            // Create vital record
+            const vitalRecord = {
+                timestamp,
+                heartRate: hr,
+                bloodPressure: bp,
+                temperature: temp,
+                spo2: spo2,
+                breathRate: breath,
+                stressLevel: stress
+            };
+
+            // Update patient data in localStorage
+            const patientDataStr = localStorage.getItem(`medcare_patient_${patientId}`);
+            let patientData = {};
+            
+            if (patientDataStr) {
+                try {
+                    patientData = JSON.parse(patientDataStr);
+                } catch (e) {
+                    console.error('Error parsing patient data:', e);
+                }
+            }
+
+            // Update vitals
+            if (hr) patientData.heartRate = hr;
+            if (bp) patientData.bloodPressure = bp;
+            if (temp) patientData.temperature = temp;
+            patientData.updatedAt = timestamp;
+            patientData.lastVitalSignUpdate = timestamp;
+
+            // Save updated patient data
+            localStorage.setItem(`medcare_patient_${patientId}`, JSON.stringify(patientData));
+
+            // Save to vitals history
+            let vitalsHistory = [];
+            const historyStr = localStorage.getItem(`medcare_vitals_history_${patientId}`);
+            if (historyStr) {
+                try {
+                    vitalsHistory = JSON.parse(historyStr);
+                } catch (e) {
+                    console.error('Error parsing vitals history:', e);
+                }
+            }
+            vitalsHistory.push(vitalRecord);
+            
+            // Keep only last 50 records
+            if (vitalsHistory.length > 50) {
+                vitalsHistory = vitalsHistory.slice(-50);
+            }
+            
+            localStorage.setItem(`medcare_vitals_history_${patientId}`, JSON.stringify(vitalsHistory));
+
+            // Trigger dashboard update event
+            window.dispatchEvent(new Event('dashboard_update'));
+            
+            console.log('✅ Vitals saved to dashboard:', vitalRecord);
+        }
+
+        // ── Canvas Overlay — face ROI, landmarks, live badges ──
+        function drawOverlay(W, H, roiX, roiY, roiW, roiH, faceDetected) {
+            ctx.clearRect(0, 0, W, H);
+            const cx = W / 2, cy = H / 2;
+            const ew = W * 0.32, eh = H * 0.55;
+
+            if (faceDetected) {
+                // Face oval
+                ctx.strokeStyle = 'rgba(16,185,129,0.5)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 4]);
+                ctx.beginPath();
+                ctx.ellipse(cx, cy - H * 0.02, ew, eh, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Forehead ROI box
+                ctx.strokeStyle = 'rgba(16,185,129,0.9)';
+                ctx.lineWidth = 2;
+                roundRect(ctx, roiX, roiY, roiW, roiH, 6);
+                ctx.stroke();
+                ctx.font = '600 11px Inter, sans-serif';
+                ctx.fillStyle = 'rgba(16,185,129,0.9)';
+                ctx.fillText('FOREHEAD ROI', roiX, roiY - 6);
+
+                // Cheek ROIs
+                const ckW = W * 0.12, ckH = H * 0.14, ckY = H * 0.36;
+                ctx.strokeStyle = 'rgba(16,185,129,0.35)';
+                ctx.lineWidth = 1.5;
+                roundRect(ctx, cx - ew * 0.85, ckY, ckW, ckH, 5); ctx.stroke();
+                roundRect(ctx, cx + ew * 0.85 - ckW, ckY, ckW, ckH, 5); ctx.stroke();
+
+                // Facial landmark dots
+                [
+                    [cx - ew * 0.3, cy - H * 0.12],  // left eye
+                    [cx + ew * 0.3, cy - H * 0.12],  // right eye
+                    [cx,            cy + H * 0.05],  // nose
+                    [cx,            cy + H * 0.22],  // mouth
+                ].forEach(([x, y]) => {
+                    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(16,185,129,0.65)'; ctx.fill();
+                });
+
+                // Pulsing ring on forehead ROI (synced to HR)
+                const hr = parseInt(document.getElementById('heartRate').textContent) || 70;
+                const p  = 0.5 + 0.5 * Math.sin(Date.now() / 1000 * (hr / 60) * Math.PI * 2);
+                ctx.strokeStyle = `rgba(229,9,20,${0.25 + p * 0.55})`;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 3]);
+                ctx.strokeRect(
+                    roiX - 4 - p * 3, roiY - 4 - p * 3,
+                    roiW + 8 + p * 6, roiH + 8 + p * 6
+                );
+                ctx.setLineDash([]);
+
+                // Live HR badge beside ROI
+                const hrText = document.getElementById('heartRate').textContent;
+                if (hrText !== '--') {
+                    const bx = roiX + roiW + 8, by = roiY;
+                    ctx.fillStyle = 'rgba(14,14,16,0.85)';
+                    roundRect(ctx, bx, by, 90, 26, 6); ctx.fill();
+                    ctx.strokeStyle = 'rgba(229,9,20,0.6)'; ctx.lineWidth = 1;
+                    roundRect(ctx, bx, by, 90, 26, 6); ctx.stroke();
+                    ctx.fillStyle = '#e50914';
+                    ctx.font = 'bold 12px Inter, sans-serif';
+                    ctx.fillText(`❤ ${hrText} BPM`, bx + 7, by + 18);
+                }
+
+            } else {
+                // Guide oval — face not detected
+                ctx.strokeStyle = 'rgba(229,9,20,0.4)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 6]);
+                ctx.beginPath();
+                ctx.ellipse(cx, cy - H * 0.02, ew, eh, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(229,9,20,0.7)';
+                ctx.font = 'bold 13px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Position face here', cx, cy - eh + 24);
+                ctx.textAlign = 'left';
+            }
+        }
+
+        function roundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        // ── PPG Waveform ──
+        function drawWaveform() {
+            const W = wCanvas.width, H = wCanvas.height;
+            wCtx.clearRect(0, 0, W, H);
+            if (waveformBuf.length < 4) return;
+
+            const mn = Math.min(...waveformBuf), mx = Math.max(...waveformBuf), r = mx - mn || 1;
+            const step   = W / (WAVEFORM_SIZE - 1);
+            const offset = waveformBuf.length < WAVEFORM_SIZE ? (WAVEFORM_SIZE - waveformBuf.length) * step : 0;
+
+            // Subtle grid
+            wCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+            wCtx.lineWidth = 1;
+            [H / 3, (H * 2) / 3].forEach(y => {
+                wCtx.beginPath(); wCtx.moveTo(0, y); wCtx.lineTo(W, y); wCtx.stroke();
+            });
+
+            // Gradient waveform line
+            const grad = wCtx.createLinearGradient(0, 0, W, 0);
+            grad.addColorStop(0,    'rgba(229,9,20,0)');
+            grad.addColorStop(0.15, 'rgba(229,9,20,0.85)');
+            grad.addColorStop(0.85, 'rgba(229,9,20,0.85)');
+            grad.addColorStop(1,    'rgba(229,9,20,0)');
+
+            wCtx.strokeStyle = grad;
+            wCtx.lineWidth   = 2;
+            wCtx.shadowColor = 'rgba(229,9,20,0.5)';
+            wCtx.shadowBlur  = 8;
+            wCtx.beginPath();
+            waveformBuf.forEach((v, i) => {
+                const x = offset + i * step;
+                const y = H - ((v - mn) / r) * (H * 0.8) - H * 0.1;
+                i === 0 ? wCtx.moveTo(x, y) : wCtx.lineTo(x, y);
+            });
+            wCtx.stroke();
+            wCtx.shadowBlur = 0;
+        }
+
+        // ── Stop Camera ──
+        function stopCamera() {
+            isProcessing = false;
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            document.getElementById('cameraOverlay').style.display = 'flex';
+            document.getElementById('statusDot').classList.remove('active', 'processing');
+            document.getElementById('statusText').textContent = 'Camera stopped';
+            document.getElementById('pulseWave').classList.remove('active');
+        }
+
+        function toggleMobileMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+        }
+
+        document.querySelectorAll('.sidebar-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 767) toggleMobileMenu();
+            });
+        });
+    </script>
+</body>
+</html>

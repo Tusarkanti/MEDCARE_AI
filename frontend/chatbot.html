@@ -188,6 +188,44 @@
             background: rgba(255, 255, 255, 0.1);
             color: #ffffff;
         }
+
+        .chatbot-connection-banner {
+            margin: 0 16px 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            display: none;
+        }
+        .chatbot-connection-banner.ok {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #6ee7b7;
+        }
+        .chatbot-connection-banner.err {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+        }
+        .chatbot-connection-banner code {
+            font-size: 0.85em;
+            padding: 2px 6px;
+            background: rgba(0,0,0,0.35);
+            border-radius: 4px;
+        }
+        .chatbot-banner-retry {
+            margin-left: 10px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .chatbot-banner-retry:hover {
+            background: rgba(255,255,255,0.18);
+        }
         
         /* Chat Window */
         #chat-window {
@@ -573,14 +611,15 @@
             <li><a href="index.html"><span>📊</span> Dashboard</a></li>
             <li><a href="ai-intake.html"><span>🧠</span> AI Intake</a></li>
             <li><a href="chatbot.html" class="active"><span>💬</span> AI Chatbot</a></li>
+
+            <li><a href="vital-signs-camera.html"><span>📸</span> Vital Signs</a></li>
             <li><a href="insurance.html"><span>🛡️</span> Insurance</a></li>
         </ul>
         <div class="sidebar-footer">
             <div class="user-info">
                 <span class="user-avatar">👤</span>
-                <span class="user-name">User</span>
+                <span class="user-name">Guest</span>
             </div>
-            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
         </div>
     </nav>
 
@@ -615,6 +654,8 @@
                         <button onclick="exportChatHistory()" title="Download conversation">⬇️ Export</button>
                     </div>
                 </div>
+
+                <div id="chatbot-connection-banner" class="chatbot-connection-banner" role="status" aria-live="polite"></div>
                 
                 <!-- Chat Window -->
                 <div id="chat-window">
@@ -634,28 +675,28 @@
                     
                     <!-- Quick Suggestions -->
                     <div class="chat-suggestions">
-                        <button class="suggestion-btn" onclick="sendSuggestion('Explain how JavaScript closures work')">💻 Explain closures</button>
-                        <button class="suggestion-btn" onclick="sendSuggestion('Write a Python function to sort a list')">🐍 Python code</button>
-                        <button class="suggestion-btn" onclick="sendSuggestion('What are the best practices for React?')">⚛️ React tips</button>
-                        <button class="suggestion-btn" onclick="sendSuggestion('Help me write an email to my boss')">✉️ Write email</button>
-                        <button class="suggestion-btn" onclick="sendSuggestion('Explain quantum computing simply')">🔬 Explain topic</button>
-                        <button class="suggestion-btn" onclick="sendSuggestion('Give me creative ideas for a birthday party')">🎨 Creative ideas</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('What are the symptoms of diabetes?')">🩸 Diabetes Info</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('How can I improve my immune system?')">💪 Boost Immunity</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('What is a healthy diet plan?')">🥗 Diet Tips</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('How much exercise do I need?')">🏃 Exercise Info</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('What are the warning signs of heart disease?')">❤️ Heart Health</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('How to manage stress effectively?')">🧘 Stress Relief</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('What are the symptoms of COVID-19?')">😷 COVID Info</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('How to maintain good mental health?')">🧠 Mental Health</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('What vitamins should I take daily?')">💊 Vitamins</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('How to sleep better?')">😴 Sleep Tips</button>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <script src="scripts/config.js?v=100"></script>
-    <script src="scripts/auth.js?v=100"></script>
+    <script src="scripts/config.js?v=101"></script>
+    <script src="scripts/auth.js?v=6"></script>
     <script>
-        if (!requireAuth()) {
-            // Will redirect to login
-        } else {
-            updateUserDisplay();
-        }
+        // Authentication is currently disabled; auth.js is retained for later use.
     </script>
-    <script src="scripts/chatbot.js?v=500"></script>
+    <script src="scripts/chatbot.js?v=504"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>

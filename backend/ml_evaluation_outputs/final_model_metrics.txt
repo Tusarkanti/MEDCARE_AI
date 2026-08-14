@@ -1,0 +1,37 @@
+MEDCARE AI — Final Ensemble Model Metrics
+==================================================
+Random state: 42
+Min matched symptoms (quality gate): 2
+Train target: disease_category (Indian hospital dataset)
+
+--- Hold-out test performance ---
+Accuracy:  0.9848  (98.48%)
+Precision: 0.9850  (weighted)
+Recall:    0.9848  (weighted)
+F1-score:  0.9848  (weighted)
+ROC AUC:   0.9998  (macro OvR)
+PR AP:     0.9986  (macro)
+
+--- Ensemble validation member scores ---
+  rf: 0.9863
+  et: 0.9802
+  hgb: 0.9879
+  lr: 0.9822
+  svm: 0.9794
+  xgb: 0.9851
+
+--- Ensemble weights ---
+  rf: 0.1685
+  et: 0.1644
+  hgb: 0.1696
+  lr: 0.1658
+  svm: 0.1639
+  xgb: 0.1677
+
+--- Data ---
+Classes: 7
+Features: 81
+Test samples: 3094
+Preprocessing: {'rows_in': 20000, 'min_matched_symptoms': 2, 'rows_after_dedup': 20000, 'engineered_features': ['symptom_count', 'symptom_density', 'age_bmi'], 'rows_after_symptom_filter': 15469, 'rows_out': 15469}
+Sources:
+  - indian_diseases_dataset.csv (20000 rows), y=disease_category

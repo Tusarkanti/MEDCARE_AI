@@ -1,0 +1,31 @@
+Disease,Precaution_1,Precaution_2,Precaution_3,Precaution_4
+Fungal infection,avoid_itchy_areas,use_antifungal_cream,keep_skin_dry,avoid_scratching
+Allergy,avoid_allergens,antihistamines,cold_compress,see_allergist
+viral_wart,salicylic_acid,cryotherapy,avoid_touching,good_hygiene
+chicken_pox,calamine_lotion,oatmeal_bath,stay_home,avoid_aspirin
+impetigo,antibiotics,keep_clean,avoid_scratching,hand_washing
+Malaria,bed_nets,insect_repellent,prophylactic_drugs,remove_stagnant_water
+Dengue,mosquito_nets,rest,hydration,acetaminophen
+Chikungunya,rest,joint_support,mosquito_protection,hydration
+Typhoid,vaccination,safe_water,hand_hygiene,avoid_raw_food
+Yellow Fever,vaccination,mosquito_nets,avoid_endemic_areas,DEET_repellent
+Common Cold,rest,hydration,saline_nasal,sleep
+Influenza,vaccination,rest,hydration,antivirals_early
+COVID-19,vaccination,mask,hand_hygiene,isolation
+Gastroenteritis,hydration_electrolytes,BRAT_diet,hand_hygiene,rest
+Migraine,trigger_avoidance,hydration,caffeine,sleep
+Hypertension,DASH_diet,exercise,limit_sodium,monitor_BP
+Diabetes,carb_counting,exercise,medication,glucose_monitor
+Asthma,avoid_triggers,inhaler_action_plan,vaccinations,peak_flow
+Arthritis,exercise,weight_control,heat_cold,PT
+Peptic Ulcer Disease,PPI_drugs,avoid_NSAIDs,antacids,food_timing
+GERD,head_elevation,avoid_trigger_foods,small_meals,weight_loss
+Depression,therapy,exercise,sleep_hygiene,social_support
+Anxiety,CBT,relaxation,exercise,limit_caffeine
+Osteoarthritis,weight_loss,exercise,PT,NSAIDs
+Pneumonia,vaccination,rest,hydration,antibiotics
+UTI,increase_fluids,cranberry,hygiene,women_wipe_front
+Sinusitis,saline_irrigation,decongestants,hydration,humidifier
+Bronchitis,hydration,rest,humidifier,avoid_smoking
+Conjunctivitis,hand_hygiene,cold_compresses,no_contact_lenses,antibiotics_if_bacterial
+

@@ -1,0 +1,31 @@
+DID,DNAME,PRECAU,OCCUR,RISKFAC
+1,Fungal infection,keep_skin_dry,moderate,diabetes,immunosuppression,humid_climate
+2,Allergy,avoid_allergens,high,family_history,atopy,pollens
+3,viral_wart,avoid_skin_trauma,low,HPV_exposure,immunosuppression,children
+4,chicken_pox,avoid_contact,moderate,varicella_susceptibility,unvaccinated
+5,impetigo,good_hygiene,moderate,staph_strep_carriage,skin_breaks,children
+6,Malaria,bed_nets,high,travel_to_endemic,unprotected_sleep,no_prophylaxis
+7,Dengue,mosquito_nets,moderate,travel_to_endemic,Aedes_exposure
+8,Chikungunya,mosquito_protection,low,travel_to_endemic,Aedes_aegypti
+9,Typhoid,safe_water,moderate,travel_to_endemic,contaminated_food
+10,Yellow Fever,vaccination,low,travel_unvaccinated,mosquito_bites
+11,Common Cold,crowd_avoidance,very_high,rhinovirus_exposure,winter
+12,Influenza,vaccination,high,influenza_circulation,elderly,chronic_disease
+13,COVID-19,vaccination,high,SARS_CoV2_exposure,elderly,comorbidities
+14,Gastroenteritis,hand_hygiene,high,contaminated_food,norovirus_crowds
+15,Migraine,trigger_avoidance,moderate,family_history,stress,sleep_deprivation
+16,Hypertension,healthy_lifestyle,very_high,family_history,obesity,salt
+17,Diabetes,healthy_weight,high,family_history,obesity,sedentary
+18,Asthma,avoid_triggers,moderate,family_history,atopy,smoking
+19,Arthritis,healthy_weight,high,age,female,obesity
+20,Peptic Ulcer Disease,avoid_NSAIDs,moderate,H_pylori,smoking,stress
+21,GERD,weight_loss,high,obesity,hiatal_hernia,pregnancy
+22,Depression,exercise,moderate,family_history,stress,chronic_disease
+23,Anxiety,relaxation,high,family_history,stress,caffeine
+24,Osteoarthritis,exercise,high,age,obesity,female
+25,Pneumonia,vaccination,moderate,smoking,elderly,COPD
+26,UTI,hydration,high,female_anatomy,sexual_activity,diabetes
+27,Sinusitis,avoid_allergens,moderate,URI,allergic_rhinitis,smoking
+28,Bronchitis,avoid_smoking,moderate,smoking,COPD,winter
+29,Conjunctivitis,hand_hygiene,high,crowded_conditions,pool_water,contact_lenses
+

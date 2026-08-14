@@ -336,6 +336,11 @@
                     <br><br>
                     <em>Link expires in 10 minutes.</em>
                 </p>
+                <p id="dev-verify-note" style="display:none; font-size:0.9rem; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.35); padding:10px; border-radius:10px;">
+                    SMTP is not configured. Use this local verification link:
+                    <br>
+                    <a id="dev-verify-link" href="#" style="word-break:break-all; color:#f59e0b;">Open verify link</a>
+                </p>
                 <a href="login.html" class="login-btn">Go to Login</a>
             </div>
             
@@ -345,7 +350,8 @@
         </div>
     </div>
 
-    <script src="scripts/auth.js?v=3"></script>
+    <script src="scripts/config.js"></script>
+    <script src="scripts/auth.js?v=6"></script>
     <script>
         // Redirect if already logged in
         if (redirectIfLoggedIn()) {
@@ -402,18 +408,16 @@
             const result = await signup(email, password, name);
             
             if (result.success) {
-                // Check if in dev mode (message contains DEV MODE)
-                if (result.message && result.message.includes('DEV MODE')) {
-                    // In dev mode, redirect to login directly
-                    showAuthMessage(result.message + ' Redirecting to login...', false);
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 2000);
-                } else {
-                    // Show success panel
-                    document.getElementById('signup-form').style.display = 'none';
-                    document.getElementById('success-panel').style.display = 'block';
-                    document.getElementById('sent-email').textContent = email;
+                document.getElementById('signup-form').style.display = 'none';
+                document.getElementById('success-panel').style.display = 'block';
+                document.getElementById('sent-email').textContent = email;
+
+                if (result.devVerifyUrl) {
+                    const note = document.getElementById('dev-verify-note');
+                    const link = document.getElementById('dev-verify-link');
+                    note.style.display = 'block';
+                    link.href = result.devVerifyUrl;
+                    link.textContent = result.devVerifyUrl;
                 }
             } else {
                 showAuthMessage(result.message, true);

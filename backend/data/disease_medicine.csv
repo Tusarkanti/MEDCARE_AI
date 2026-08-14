@@ -1,0 +1,31 @@
+Medicine_ID,Medicine_Name,Disease_ID,Medicine_Composition,Medicine_Description
+M001,Clotrimazole,Fungal infection,antifungal,Topical antifungal cream for skin infections
+M002,Loratadine,Allergy,antihistamine,Non-drowsy antihistamine for allergy symptoms
+M003,Salicylic Acid,viral_wart,keratolytic,Topical treatment for warts
+M004,Acyclovir,chicken_pox,antiviral,Oral antiviral for varicella zoster
+M005,Mupirocin,impetigo,topical antibiotic,Topical antibiotic for skin infections
+M006,Artemether Lumefantrine,Malaria,antimalarial,Artemisinin combination therapy
+M007,Doxycycline,Dengue,antibiotic,Tetracycline for secondary infections
+M008,Paracetamol,Chikungunya,analgesic,Pain relief and fever reduction
+M009,Ciprofloxacin,Typhoid,antibiotic,Fluoroquinolone for typhoid fever
+M010,Yellow Fever Vaccine,Yellow Fever,vaccine,Live attenuated vaccine
+M011,Oscillococcinum,Common Cold,homeopathic,Homeopathic flu-like symptom relief
+M012,Oseltamivir,Influenza,antiviral,Neuraminidase inhibitor for flu
+M013,Paxlovid,COVID-19,antiviral,Protease inhibitor for COVID-19
+M014,Ondansetron,Gastroenteritis,antiemetic,Anti-nausea medication
+M015,Sumatriptan,Migraine,triptan,Migraine-specific abortive therapy
+M016,Lisinopril,Hypertension,ACE inhibitor,First-line antihypertensive
+M017,Metformin,Diabetes,antidiabetic,First-line oral diabetes medication
+M018,Salbutamol,Asthma,bronchodilator,Short-acting beta agonist inhaler
+M019,Ibuprofen,Arthritis,NSAID,Anti-inflammatory pain relief
+M020,Omeprazole,Peptic Ulcer Disease,PPI,Proton pump inhibitor for ulcers
+M021,Ranitidine,GERD,H2 blocker,Acid suppression for reflux
+M022,Sertraline,Depression,SSRI,Selective serotonin reuptake inhibitor
+M023,Lorazepam,Anxiety,benzodiazepine,Short-term anxiety relief
+M024,Glucosamine,Osteoarthritis,supplement,Joint health supplement
+M025,Azithromycin,Pneumonia,antibiotic,Macrolide for community-acquired pneumonia
+M026,Nitrofurantoin,UTI,antibiotic,Urinary tract antibiotic
+M027,Pseudoephedrine,Sinusitis,decongestant,Oral decongestant
+M028,Guaifenesin,Bronchitis,expectorant,Mucus clearance
+M029,Chloramphenicol,Conjunctivitis,antibiotic eye drops,Bacterial conjunctivitis treatment
+

@@ -8,6 +8,9 @@
  * - Markdown rendering
  * - Context-aware conversations
  * - Clean error handling (no console warnings)
+ * 
+ * Backend-only architecture:
+ * - Uses local backend API for AI responses
  */
 
 document.addEventListener('DOMContentLoaded', initializeChatbot);
@@ -19,12 +22,63 @@ const ChatState = {
   chatHistory: [],
   allChats: [],
   isWaitingForResponse: false,
-  abortController: null
+  abortController: null,
+  useLocalModel: true // Flag to track which API to use
 };
 
-function getWebhookUrl() {
-  return APP_CONFIG?.webhookUrl || 'https://tusarrr.app.n8n.cloud/webhook/medical-assistant';
+function _apiBase() {
+  return typeof getApiBaseUrl === 'function' ? getApiBaseUrl() : APP_CONFIG.localServer.baseUrl;
 }
+
+/** v2 JWT + MongoDB persisted chat */
+function getChatbotApiUrl() {
+  return _apiBase() + '/api/v2/chat/send';
+}
+
+function getChatbotUrl() {
+  return getChatbotApiUrl();
+}
+
+/** Connection help: call on load and after failed sends */
+function refreshChatbotBackendBanner() {
+  const el = document.getElementById('chatbot-connection-banner');
+  if (!el) return;
+  const base = _apiBase();
+  if (window.location.protocol === 'file:') {
+    el.style.display = 'block';
+    el.className = 'chatbot-connection-banner err';
+    el.innerHTML =
+      'Do not open this page from disk (<code>file://</code>). Run a local web server in the <code>frontend</code> folder: <code>python -m http.server 5500</code> — then open <a href="http://127.0.0.1:5500/chatbot.html" style="color:#fecaca;text-decoration:underline">http://127.0.0.1:5500/chatbot.html</a>.';
+    return;
+  }
+  fetch(base + '/api/chatbot/health', { method: 'GET' })
+    .then((r) => {
+      if (!r.ok) throw new Error('bad status');
+      return r.json();
+    })
+    .then(() => {
+      el.style.display = 'block';
+      el.className = 'chatbot-connection-banner ok';
+      el.textContent = 'Connected to MedCare backend at ' + base;
+      setTimeout(() => {
+        el.style.display = 'none';
+      }, 5000);
+    })
+    .catch(() => {
+      el.style.display = 'block';
+      el.className = 'chatbot-connection-banner err';
+      el.innerHTML =
+        'Cannot reach the API at <strong>' +
+        base +
+        '</strong>. Start the server: open a terminal in the <code>backend</code> folder and run <code>python app.py</code>, then click Retry or refresh. <button type="button" class="chatbot-banner-retry">Retry</button>';
+      const btn = el.querySelector('.chatbot-banner-retry');
+      if (btn) {
+        btn.onclick = () => refreshChatbotBackendBanner();
+      }
+    });
+}
+
+window.refreshChatbotBackendBanner = refreshChatbotBackendBanner;
 
 async function initializeChatbot() {
   ChatState.patientId = localStorage.getItem('medcare_mobile_number');
@@ -44,8 +98,9 @@ async function initializeChatbot() {
   if (!ChatState.currentChatId) {
     startNewChat();
   }
-  
-  console.log('✅ AI Chatbot initialized - ChatGPT-like experience');
+
+  refreshChatbotBackendBanner();
+  console.log('AI Chatbot initialized');
 }
 
 function loadAllChats() {
@@ -99,12 +154,38 @@ function getWelcomeMessage() {
   
   return `${greeting}
 
-I'm your AI Assistant. I can help you with **anything** you'd like to discuss:
+I'm your **AI Health Assistant** - like having a knowledgeable friend who's always there to help! 🏥
 
+I can assist you with virtually **ANYTHING** you'd like to know:
 
-🏥 **Health Questions** - General wellness advice
+🩺 **Health & Medical**
+   - Symptoms, conditions, and health concerns
+   - Medication information and side effects
+   - First aid and emergency guidance
 
-Ask me anything! I'm here to help. 🚀`;
+🥗 **Nutrition & Wellness**
+   - Healthy eating plans and diet tips
+   - Vitamin and supplement advice
+   - Weight management strategies
+
+🏃 **Fitness & Exercise**
+   - Workout recommendations
+   - Exercise routines for all levels
+   - Recovery and injury prevention
+
+🧠 **Mental Health**
+   - Stress management techniques
+   - Sleep improvement tips
+   - Mindfulness and meditation guidance
+
+💡 **General Knowledge**
+   - Science, technology, and more
+   - Quick explanations on any topic
+   - Health news and updates
+
+**Just ask me anything!** I'm here to help 24/7. 🚀
+
+*Note: For serious medical concerns, always consult a healthcare professional.*`;
 }
 
 function loadChat(chatId) {
@@ -231,7 +312,15 @@ async function sendMessage() {
   } catch (error) {
     console.error('Chat error:', error);
     removeTyping(typingId);
-    addBotMessage('⚠️ Sorry, there was an error processing your request. Please try again.');
+    refreshChatbotBackendBanner();
+    const hint =
+      (error && error.message) ||
+      'Unable to reach the server. Start the backend (python app.py in backend folder) and use http://127.0.0.1:5500/chatbot.html (not file://).';
+    addBotMessage(
+      '**Could not get a reply.**\n\n' +
+        hint +
+        '\n\n**Checklist:**\n1. Backend running: `cd backend` → `python app.py`\n2. Open the site via **http://127.0.0.1:5500/chatbot.html** (serve `frontend` with `python -m http.server 5500`).'
+    );
   }
   
   ChatState.isWaitingForResponse = false;
@@ -242,95 +331,106 @@ async function sendMessage() {
 }
 
 /**
- * ✅ FULLY FIXED: Complete API request handler with clean error handling
- * Handles both JSON and plain text responses without console warnings
+ * Complete backend API request handler with clean error handling.
  */
 async function getAIResponse(userMessage) {
-  const CHATBOT_WEBHOOK = APP_CONFIG?.chatbot?.webhookUrl || 
-                          'https://tusarrr.app.n8n.cloud/webhook/chat';
-  
-  const requestBody = {
-    message: userMessage
-  };
-
+  const apiBase = _apiBase();
   try {
-    const response = await fetch(CHATBOT_WEBHOOK, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody)
-    });
+    function getUsableAuthToken() {
+      const rawToken = (typeof getToken === 'function' ? getToken() : '') || '';
+      if (!rawToken || typeof rawToken !== 'string') return '';
+
+      // JWT must contain 3 base64url sections.
+      const parts = rawToken.split('.');
+      if (parts.length !== 3) {
+        localStorage.removeItem('medcare_token');
+        return '';
+      }
+
+      try {
+        const payloadJson = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+        const payload = JSON.parse(payloadJson);
+        const now = Math.floor(Date.now() / 1000);
+        if (typeof payload.exp === 'number' && payload.exp <= now) {
+          // Expired token; clear it to avoid repeated 401 calls.
+          localStorage.removeItem('medcare_token');
+          return '';
+        }
+      } catch (e) {
+        localStorage.removeItem('medcare_token');
+        return '';
+      }
+
+      return rawToken;
+    }
+
+    async function sendChatRequest(useV2Route, token) {
+      const endpoint = useV2Route ? getChatbotUrl() : apiBase + '/api/chatbot';
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (useV2Route) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const body = useV2Route
+        ? { message: userMessage, chat_id: ChatState.currentChatId || null }
+        : { message: userMessage, session_id: ChatState.currentChatId || 'guest' };
+
+      return fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body)
+      });
+    }
+
+    const token = getUsableAuthToken();
+    const useV2Route = Boolean(token);
+    let response = await sendChatRequest(useV2Route, token);
+
+    // If auth token is invalid/expired, gracefully retry as guest route.
+    if (response.status === 401 && useV2Route) {
+      response = await sendChatRequest(false, '');
+    }
 
     // ✅ Check HTTP status
     if (!response.ok) {
       throw new Error(`Server returned ${response.status}: ${response.statusText}`);
     }
 
-    // ✅ Read response as text first (prevents JSON parse errors)
-    const rawText = await response.text();
-
-    // ✅ Handle empty response
-    if (!rawText || !rawText.trim()) {
-      throw new Error('Empty response from server');
-    }
-
-    // ✅ Smart response parsing: Only try JSON if it looks like JSON
-    const trimmedText = rawText.trim();
-    
-    // Check if response looks like JSON (starts with { or [)
-    if (trimmedText.startsWith('{') || trimmedText.startsWith('[')) {
-      try {
-        const data = JSON.parse(trimmedText);
-        
-        // Only show AI reply - never expose system data
-        if (typeof data.reply === 'string') {
-          return data.reply;
-        }
-        
-        if (typeof data.message === 'string') {
-          return data.message;
-        }
-        
-        // Check for common response field names
-        if (typeof data.response === 'string') {
-          return data.response;
-        }
-        
-        if (typeof data.text === 'string') {
-          return data.text;
-        }
-        
-        if (typeof data.output === 'string') {
-          return data.output;
-        }
-        
-        // Never expose raw JSON to user - return friendly error
-        return 'Sorry, I received an unexpected response. Please try again.';
-      } catch (jsonError) {
-        // JSON parse failed, treat as plain text
-        return trimmedText;
+    const data = await response.json();
+    if (data.success && data.response) {
+      let enrichedResponse = data.response;
+      if (Array.isArray(data.suggested_symptoms) && data.suggested_symptoms.length > 0) {
+        enrichedResponse += `\n\nRecognized symptoms: ${data.suggested_symptoms.join(', ')}`;
       }
+      if (data.triage?.is_emergency) {
+        enrichedResponse += '\n\nIf symptoms are severe or worsening, seek emergency care immediately.';
+      }
+      return enrichedResponse;
     }
-    
-    // ✅ Default: treat as plain text, but sanitize internal markers
-    return sanitizeResponse(trimmedText);
+    throw new Error(data.error || 'Unexpected response from backend');
 
   } catch (error) {
-    console.error('❌ Chatbot API error:', error);
-    
-    // Provide specific error messages
-    if (error.message.includes('Failed to fetch')) {
-      throw new Error('Network error: Unable to reach the server. Please check your connection.');
+    console.error('Chatbot API error:', error);
+
+    if (
+      (error && error.message && error.message.includes('Failed to fetch')) ||
+      (error && error.name === 'TypeError')
+    ) {
+      throw new Error(
+        'Cannot connect to ' +
+          apiBase +
+          '. Start the Flask app (python app.py in backend). If you opened this page from disk, use http://127.0.0.1:5500/chatbot.html instead.'
+      );
     }
     
     if (error.message.includes('500')) {
       throw new Error('Server error: The AI service is temporarily unavailable.');
     }
     
-    if (error.message.includes('404')) {
-      throw new Error('Configuration error: AI endpoint not found.');
-    }
-    
-    throw error;
+    throw new Error(error.message || 'AI service unavailable');
   }
 }
 

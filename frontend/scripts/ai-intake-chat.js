@@ -2,7 +2,7 @@
  * AI Health Intake Assistant
  * Step-by-step patient data collection with strict validation
  * Mobile number (10 digits) = UNIQUE patient ID
- * Data is saved via n8n webhook (no Firebase in frontend)
+ * Data is saved via backend API endpoint
  */
 
 document.addEventListener('DOMContentLoaded', initializeAIIntake);
@@ -50,14 +50,6 @@ const FIELD_QUICK_RESPONSES = {
   gender: ['Male', 'Female', 'Other'],
   pain_level: ['0 - No pain', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10 - Worst pain']
 };
-
-// ============================================================================
-// SINGLE WEBHOOK URL - All data flows here
-// ============================================================================
-
-function getWebhookUrl() {
-  return APP_CONFIG?.webhookUrl || 'https://tusarrr.app.n8n.cloud/webhook/medical-assistant';
-}
 
 // ============================================================================
 // Initialization
@@ -300,10 +292,10 @@ async function completeIntake() {
     status: "success"
   });
 
-  // Generate doctor advice FIRST (before webhook, so it's included in payload)
+  // Generate doctor advice before API submit so it remains in payload.
   const doctorAdvice = generateDoctorAdvice();
 
-  // Build payload for n8n webhook
+  // Build intake payload for backend API.
   const payload = {
     phone_number: IntakeState.collectedData.mobile_number,
     patient_name: IntakeState.collectedData.full_name,
@@ -326,11 +318,11 @@ async function completeIntake() {
     created_at: now
   };
 
-  // Save to localStorage for dashboard (always works, even if webhook fails)
+  // Save to localStorage for dashboard continuity.
   saveToLocalStorage(payload, doctorAdvice);
 
-  // Send to n8n webhook
-  await sendToWebhook(payload);
+  // Send to backend intake API
+  await sendToBackendApi(payload);
 
   // Show completion message and doctor advice
   showCompletionMessage();
@@ -372,29 +364,30 @@ function saveToLocalStorage(payload, doctorAdvice) {
 }
 
 /**
- * Send data to n8n webhook
- * Uses standard fetch with proper headers
- * n8n webhook MUST have CORS enabled (respond with Access-Control-Allow-Origin header)
+ * Send structured intake to backend API
  */
-async function sendToWebhook(payload) {
-  console.log('📤 Sending data to n8n webhook...');
+async function sendToBackendApi(payload) {
+  console.log('📤 Sending intake data to backend API...');
   
   try {
-    const response = await fetch(getWebhookUrl(), {
+    const response = await fetch(getIntakeSubmitUrl(), {
       method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader()
+      },
       body: JSON.stringify(payload)
     });
 
     if (response.ok) {
       const result = await response.json().catch(() => ({}));
-      console.log('✅ Webhook success:', result);
+      console.log('✅ Intake API success:', result);
     } else {
-      console.error('❌ Webhook error:', response.status, response.statusText);
+      console.error('❌ Intake API error:', response.status, response.statusText);
     }
   } catch (error) {
-    console.error('❌ Failed to send to webhook:', error.message);
-    console.log('ℹ️ Data saved to localStorage. n8n may have CORS disabled.');
-    console.log('ℹ️ To fix: Enable CORS in n8n webhook node settings or add "Respond to Webhook" node with CORS headers.');
+    console.error('❌ Failed to send to intake API:', error.message);
+    console.log('ℹ️ Data is still saved locally for dashboard continuity.');
   }
 }
 

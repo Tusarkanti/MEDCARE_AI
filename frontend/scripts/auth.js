@@ -1,14 +1,18 @@
 /**
  * Authentication System
- * Email verification-based auth using n8n webhook
- * Features: Signup, Login, Email Verification, Session Management
+ * Local JWT-based authentication with MongoDB backend
+ * Features: Signup, Login, Session Management, Token handling
  */
 
 const AUTH_CONFIG = {
-  API_URL: 'https://tusarrr.app.n8n.cloud/webhook/medical-assistant',
   SESSION_KEY: 'medcare_session',
-  USER_KEY: 'medcare_user'
+  USER_KEY: 'medcare_user',
+  TOKEN_KEY: 'medcare_token'
 };
+
+// Authentication is retained for future use, but it is currently disconnected
+// from the public site. Set this to true to restore the existing login gate.
+const AUTH_ENABLED = false;
 
 // ============================================================================
 // Session Management
@@ -32,22 +36,31 @@ function getUser() {
   }
 }
 
-function saveSession(sessionData, userData) {
+function getToken() {
+  return localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
+}
+
+function saveSession(sessionData, userData, token) {
   localStorage.setItem(AUTH_CONFIG.SESSION_KEY, JSON.stringify({
     ...sessionData,
     createdAt: new Date().toISOString()
   }));
   localStorage.setItem(AUTH_CONFIG.USER_KEY, JSON.stringify(userData));
+  if (token) {
+    localStorage.setItem(AUTH_CONFIG.TOKEN_KEY, token);
+  }
 }
 
 function clearSession() {
   localStorage.removeItem(AUTH_CONFIG.SESSION_KEY);
   localStorage.removeItem(AUTH_CONFIG.USER_KEY);
+  localStorage.removeItem(AUTH_CONFIG.TOKEN_KEY);
 }
 
 function isLoggedIn() {
   const session = getSession();
-  return session !== null;
+  const token = getToken();
+  return session !== null && token !== null;
 }
 
 // ============================================================================
@@ -55,6 +68,10 @@ function isLoggedIn() {
 // ============================================================================
 
 function requireAuth() {
+  if (!AUTH_ENABLED) {
+    return true;
+  }
+
   if (!isLoggedIn()) {
     window.location.href = 'login.html';
     return false;
@@ -63,6 +80,10 @@ function requireAuth() {
 }
 
 function redirectIfLoggedIn() {
+  if (!AUTH_ENABLED) {
+    return false;
+  }
+
   if (isLoggedIn()) {
     window.location.href = 'index.html';
     return true;
@@ -71,21 +92,216 @@ function redirectIfLoggedIn() {
 }
 
 // ============================================================================
-// API Calls
+// Development Mode Handler (Fallback when backend not running)
 // ============================================================================
 
-async function authRequest(data) {
+function handleDevMode(data, method, endpoint = '') {
+  const action = data?.action || method;
+  
+  // Dev mode users storage
+  const DEV_USERS_KEY = 'medcare_dev_users';
+  
+  function getDevUsers() {
+    try {
+      return JSON.parse(localStorage.getItem(DEV_USERS_KEY) || '{}');
+    } catch {
+      return {};
+    }
+  }
+  
+  function saveDevUser(email, password, name) {
+    const users = getDevUsers();
+    const userId = 'dev_' + Date.now();
+    users[email.toLowerCase()] = {
+      password,
+      name,
+      user_id: userId,
+      createdAt: new Date().toISOString()
+    };
+    localStorage.setItem(DEV_USERS_KEY, JSON.stringify(users));
+    return userId;
+  }
+  
+  function getDevUser(email) {
+    const users = getDevUsers();
+    return users[email.toLowerCase()];
+  }
+  
+  // Handle different auth actions
+  const endpointLower = String(endpoint || '').toLowerCase();
+  const isRegister = endpointLower.includes('/register');
+  const isLogin = endpointLower.includes('/login');
+
+  if ((method === 'POST' || method === 'post') && isRegister) {
+    // Register new user
+    const email = data?.email;
+    const password = data?.password;
+    const name = data?.name;
+    
+    if (!email || !password || !name) {
+      return { success: false, data: { error: 'Missing required fields' } };
+    }
+    
+    const existing = getDevUser(email);
+    if (existing) {
+      return { success: false, data: { error: 'Email already registered' } };
+    }
+    
+    const userId = saveDevUser(email, password, name);
+    const token = 'dev_token_' + Date.now();
+    
+    return {
+      success: true,
+      data: {
+        success: true,
+        message: '[DEV MODE] Account created successfully!',
+        token: token,
+        user_id: userId,
+        email: email,
+        name: name
+      }
+    };
+  }
+  
+  // Login
+  if ((method === 'POST' || method === 'post') && isLogin) {
+    const email = data?.email;
+    const password = data?.password;
+    
+    if (email && password) {
+      const user = getDevUser(email);
+      
+      if (!user) {
+        return { success: false, data: { error: 'User not found. Sign up first.' } };
+      }
+      
+      if (user.password !== password) {
+        return { success: false, data: { error: 'Invalid password.' } };
+      }
+      
+      const token = 'dev_token_' + Date.now();
+      
+      return {
+        success: true,
+        data: {
+          success: true,
+          token: token,
+          user_id: user.user_id,
+          email: email,
+          name: user.name
+        }
+      };
+    }
+  }
+
+  if (method === 'GET' || (data && !data.action)) {
+    // This is a login attempt - check if we have the right data
+    const email = data?.email;
+    const password = data?.password;
+    
+    if (email && password) {
+      const user = getDevUser(email);
+      
+      if (!user) {
+        return { success: false, data: { error: 'User not found. Sign up first.' } };
+      }
+      
+      if (user.password !== password) {
+        return { success: false, data: { error: 'Invalid password.' } };
+      }
+      
+      const token = 'dev_token_' + Date.now();
+      
+      return {
+        success: true,
+        data: {
+          success: true,
+          token: token,
+          user_id: user.user_id,
+          email: email,
+          name: user.name
+        }
+      };
+    }
+  }
+  
+  // Default success
+  return { success: true, data: { success: true, message: '[DEV MODE] Operation successful' } };
+}
+
+// ============================================================================
+// API Calls with JWT
+// ============================================================================
+
+async function authApiRequest(endpoint, data = null, method = 'POST') {
+  const token = getToken();
+  
+  // Check if we're in development mode (backend not running)
+  const isLocalDev = endpoint.includes('localhost:5000');
+  
+  // Development mode fallback - simulate auth without backend
+  if ((isLocalDev && !navigator.onLine) || endpoint.includes('localhost')) {
+    // Try the request first
+    try {
+      const options = {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      };
+      
+      if (token) {
+        options.headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      if (data) {
+        options.body = JSON.stringify(data);
+      }
+      
+      const response = await fetch(endpoint, options);
+      
+      // If backend is running, use real response
+      if (response.ok || response.status !== 0) {
+        const text = await response.text();
+        if (text && text.trim()) {
+          try {
+            const result = JSON.parse(text);
+            return { success: response.ok, data: result };
+          } catch {
+            return { success: response.ok, data: { message: text } };
+          }
+        }
+      }
+    } catch (e) {
+      console.log('Backend not available, using dev mode fallback');
+    }
+    
+    // Dev mode: simulate auth using localStorage
+    return handleDevMode(data, method, endpoint);
+  }
+  
   try {
-    const response = await fetch(AUTH_CONFIG.API_URL, {
-      method: 'POST',
+    const options = {
+      method: method,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
+      }
+    };
     
-    // Try to parse JSON, handle empty response
+    // Add authorization header if token exists
+    if (token) {
+      options.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    if (data) {
+      options.body = JSON.stringify(data);
+    }
+    
+    const response = await fetch(endpoint, options);
+    
+    // Try to parse JSON
     let result = {};
     const text = await response.text();
     
@@ -98,89 +314,15 @@ async function authRequest(data) {
       }
     }
     
-    // If response is empty but status is OK, treat as success
-    if (response.ok && Object.keys(result).length === 0) {
-      result = { success: true };
+    if (response.ok) {
+      return { success: true, data: result };
+    } else {
+      return { success: false, data: result, status: response.status };
     }
-    
-    return { success: response.ok, data: result };
   } catch (error) {
     console.error('Auth request failed:', error);
-    
-    // Check if it's a CORS error (likely testing locally)
-    if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
-      console.warn('⚠️ CORS Error: You may be testing locally. Please test from: https://medtech-hackathon-482215.web.app');
-      
-      // For local development, simulate success to allow UI testing
-      if (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        console.log('📝 Local development mode - simulating auth for UI testing');
-        return handleLocalDevelopment(data);
-      }
-    }
-    
-    return { success: false, error: 'Network error. Please check your connection or try from the deployed site.' };
+    return { success: false, error: 'Network error. Please check your connection.' };
   }
-}
-
-// Handle local development without backend
-function handleLocalDevelopment(data) {
-  const action = data.action;
-  
-  switch (action) {
-    case 'signup':
-      // Simulate signup success
-      return { 
-        success: true, 
-        data: { 
-          success: true, 
-          message: '[DEV MODE] Signup simulated. In production, verification email would be sent.' 
-        } 
-      };
-      
-    case 'login':
-      // Check localStorage for simulated user
-      const users = JSON.parse(localStorage.getItem('dev_users') || '{}');
-      const user = users[data.email];
-      
-      if (!user) {
-        return { success: false, data: { message: '[DEV MODE] User not found. Sign up first.' } };
-      }
-      
-      if (user.password !== data.password) {
-        return { success: false, data: { message: '[DEV MODE] Incorrect password.' } };
-      }
-      
-      return { 
-        success: true, 
-        data: { 
-          success: true, 
-          email_verified: true,
-          user: { email: data.email, name: user.name },
-          token: 'dev_token_' + Date.now()
-        } 
-      };
-      
-    case 'verify_email':
-      return { 
-        success: true, 
-        data: { 
-          success: true, 
-          email: 'dev@example.com',
-          name: 'Dev User',
-          token: 'dev_token_' + Date.now()
-        } 
-      };
-      
-    default:
-      return { success: true, data: { success: true } };
-  }
-}
-
-// Save user for local dev mode
-function saveDevUser(email, password, name) {
-  const users = JSON.parse(localStorage.getItem('dev_users') || '{}');
-  users[email] = { password, name, verified: true };
-  localStorage.setItem('dev_users', JSON.stringify(users));
 }
 
 // ============================================================================
@@ -190,14 +332,10 @@ function saveDevUser(email, password, name) {
 async function signup(email, password, name) {
   showLoading('Creating account...');
   
-  // Save for local dev mode
-  saveDevUser(email.toLowerCase().trim(), password, name);
-  
-  const result = await authRequest({
-    action: 'signup',
+  const result = await authApiRequest(getRegisterUrl(), {
     email: email.toLowerCase().trim(),
-    password,
-    name
+    password: password,
+    name: name
   });
   
   hideLoading();
@@ -205,13 +343,16 @@ async function signup(email, password, name) {
   if (result.success && result.data.success !== false) {
     return {
       success: true,
-      message: result.data.message || 'Verification email sent. Please check your inbox.'
+      message: result.data.message || 'Account created. Verify your email.',
+      requiresVerification: Boolean(result.data.email_verification_required),
+      devVerifyUrl: result.data.dev_verify_url || null,
+      emailSent: Boolean(result.data.email_sent)
     };
   }
   
   return {
     success: false,
-    message: result.data?.message || result.error || 'Signup failed. Please try again.'
+    message: result.data?.error || result.error || 'Signup failed. Please check if the backend server is running.'
   };
 }
 
@@ -222,97 +363,99 @@ async function signup(email, password, name) {
 async function login(email, password) {
   showLoading('Logging in...');
   
-  const result = await authRequest({
-    action: 'login',
+  const result = await authApiRequest(getLoginUrl(), {
     email: email.toLowerCase().trim(),
-    password
-  });
-  
-  hideLoading();
-  
-  if (result.success && result.data.success !== false) {
-    if (result.data.email_verified === false) {
-      return {
-        success: false,
-        needsVerification: true,
-        email: email,
-        message: 'Please verify your email before logging in.'
-      };
-    }
-    
-    saveSession(
-      { token: result.data.token || 'session_' + Date.now() },
-      { 
-        email: email,
-        name: result.data.name || result.data.user?.name,
-        ...result.data.user
-      }
-    );
-    
-    return { success: true };
-  }
-  
-  return {
-    success: false,
-    message: result.data?.message || 'Invalid email or password.'
-  };
-}
-
-// ============================================================================
-// Email Verification
-// ============================================================================
-
-async function verifyEmail(token) {
-  showLoading('Verifying email...');
-  
-  const result = await authRequest({
-    action: 'verify_email',
-    token
+    password: password
   });
   
   hideLoading();
   
   if (result.success && result.data.success !== false) {
     saveSession(
-      { token: result.data.token || 'session_' + Date.now() },
+      { token: result.data.token },
       { 
         email: result.data.email,
         name: result.data.name,
-        ...result.data.user
-      }
+        user_id: result.data.user_id
+      },
+      result.data.token
     );
     
     return { success: true };
   }
   
+  if (result.data?.needs_verification) {
+    return {
+      success: false,
+      needsVerification: true,
+      email,
+      message: result.data?.error || 'Please verify your email before login.'
+    };
+  }
+
   return {
     success: false,
-    expired: result.data?.expired === true,
-    message: result.data?.message || 'Verification failed or link expired.'
+    message: result.data?.error || 'Invalid email or password.'
+  };
+}
+
+async function verifyEmail(token) {
+  const result = await authApiRequest(`${getAuthApiUrl()}/api/auth/verify-email`, { token }, 'POST');
+  if (result.success && result.data.success) {
+    if (result.data.token) {
+      saveSession(
+        { token: result.data.token },
+        {
+          email: result.data.email,
+          name: result.data.name,
+          user_id: result.data.user_id
+        },
+        result.data.token
+      );
+    }
+    return { success: true };
+  }
+  return {
+    success: false,
+    expired: Boolean(result.data?.expired),
+    message: result.data?.error || result.error || 'Verification failed'
   };
 }
 
 async function resendVerification(email) {
-  showLoading('Sending verification email...');
-  
-  const result = await authRequest({
-    action: 'resend_verification',
-    email: email.toLowerCase().trim()
-  });
-  
-  hideLoading();
-  
-  if (result.success) {
+  const result = await authApiRequest(`${getAuthApiUrl()}/api/auth/resend-verification`, { email }, 'POST');
+  if (result.success && result.data.success) {
     return {
       success: true,
-      message: 'Verification email sent. Please check your inbox.'
+      message: result.data.message || 'Verification email sent',
+      devVerifyUrl: result.data.dev_verify_url || null
     };
   }
-  
   return {
     success: false,
-    message: result.data?.message || 'Failed to send verification email.'
+    message: result.data?.error || result.error || 'Could not resend verification email'
   };
+}
+
+// ============================================================================
+// Verify Token
+// ============================================================================
+
+async function verifyToken() {
+  const token = getToken();
+  if (!token) {
+    return { success: false, error: 'No token' };
+  }
+  
+  const result = await authApiRequest(getVerifyUrl(), null, 'GET');
+  
+  if (result.success && result.data.success) {
+    return { success: true, user_id: result.data.user_id, email: result.data.email };
+  }
+  
+  // Token expired or invalid
+  clearSession();
+  return { success: false, error: 'Session expired' };
 }
 
 // ============================================================================
@@ -322,15 +465,22 @@ async function resendVerification(email) {
 async function logout() {
   showLoading('Logging out...');
   
-  await authRequest({
-    action: 'logout',
-    email: getUser()?.email
-  });
+  // Try to call logout endpoint (optional - won't fail if it doesn't work)
+  await authApiRequest(getProfileUrl(), null, 'PUT').catch(() => {});
   
   clearSession();
   hideLoading();
   
   window.location.href = 'login.html';
+}
+
+// ============================================================================
+// Get Auth Header
+// ============================================================================
+
+function getAuthHeader() {
+  const token = getToken();
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
 // ============================================================================
@@ -420,15 +570,18 @@ function updateUserDisplay() {
 window.signup = signup;
 window.login = login;
 window.logout = logout;
-window.verifyEmail = verifyEmail;
-window.resendVerification = resendVerification;
 window.requireAuth = requireAuth;
 window.redirectIfLoggedIn = redirectIfLoggedIn;
 window.isLoggedIn = isLoggedIn;
 window.getUser = getUser;
 window.getSession = getSession;
+window.getToken = getToken;
+window.getAuthHeader = getAuthHeader;
 window.showAuthMessage = showAuthMessage;
 window.hideAuthMessage = hideAuthMessage;
 window.validateEmail = validateEmail;
 window.validatePassword = validatePassword;
 window.updateUserDisplay = updateUserDisplay;
+window.verifyToken = verifyToken;
+window.verifyEmail = verifyEmail;
+window.resendVerification = resendVerification;
