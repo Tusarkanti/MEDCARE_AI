@@ -47,6 +47,13 @@ build/Release
 # Dependency directories
 node_modules/
 
+# Python virtual environments (recreate locally from requirements.txt)
+venv/
+.venv/
+env/
+ENV/
+backend/venv/
+
 # Optional npm cache directory
 .npm
 
