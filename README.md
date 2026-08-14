@@ -1,4 +1,4 @@
-# MedCare AI
+﻿# MedCare AI
 
 MedCare AI is a healthcare-assistance web application with patient intake, symptom analysis, health predictions, vital-sign tracking, insurance assistance, and a conversational assistant.
 
@@ -9,7 +9,6 @@ MedCare AI is a healthcare-assistance web application with patient intake, sympt
 - `frontend/` ? static web application served by Firebase Hosting.
 - `backend/` ? Flask API, ML inference, chat, and supporting services.
 - `backend/ml/` and `models/` ? ML code and model-related assets.
-- `public/` ? Firebase public assets.
 - `firebase.json` ? Firebase Hosting configuration.
 
 ## Requirements
